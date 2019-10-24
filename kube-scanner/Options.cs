@@ -12,5 +12,8 @@ namespace kube_scanner
         
         [Option('e', "exporter", Required = true, HelpText = "Exporter type (File or ..")]
         public string Exporter { get; set; }
+        
+        [Option('m', "maxParallelismPercentage", Required = true, HelpText = "Maximum Degree of Parallelism in Percentage")]
+        public int MaxParallelismPercentage { get; set; }
     }
 }
