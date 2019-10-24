@@ -1,15 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Resources;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Json;
-using System.Text;
 using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace kube_scanner.helpers
 {
@@ -33,7 +27,7 @@ namespace kube_scanner.helpers
 
             _dockerClient = new DockerClientConfiguration(new Uri(DockerApiUri())).CreateClient();
             
-            PullImage(containerImage).Wait();
+            PullImage(containerImage);
         }
 
         private string DockerApiUri()
@@ -56,26 +50,27 @@ namespace kube_scanner.helpers
                 "Was unable to determine what OS this is running on, does not appear to be Windows or Linux!?");
         }
 
-        private async Task PullImage(string image)
+        private void PullImage(string image)
         {
-            var imageData = image.Split(':');
-            var imageUri = imageData[0];
-            var imageTag = imageData[1];
+            // split image uri and image tag
+            var imageStrings = image.Split(':');
+            var imageUri = imageStrings[0];
+            var imageTag = imageStrings[1];
 
             // pull the image
-            await _dockerClient.Images
+            _dockerClient.Images
                 .CreateImageAsync(new ImagesCreateParameters
                     {
                         FromImage = imageUri,
                         Tag       = imageTag
                     },
                     new AuthConfig(),
-                    new Progress<JSONMessage>());
+                    new Progress<JSONMessage>()).Wait();
         }
 
         public async Task StartContainer(string image)
         {
-            PullImage(image).Wait();
+            PullImage(image);
             
             // create the container
             var response = await _dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
@@ -85,7 +80,8 @@ namespace kube_scanner.helpers
                 Cmd   = _cmd,
                 HostConfig = _hostConfig,               
             });
-
+    
+            // get the container id
             _containerId = response.ID;
 
             // start the container    

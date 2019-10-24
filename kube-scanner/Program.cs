@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using CommandLine;
 using kube_scanner.core;
-using Docker.DotNet;
-using Docker.DotNet.Models;
 using kube_scanner.exporters;
 using kube_scanner.scanners;
+using System.Threading.Tasks;
 
 namespace kube_scanner
 {
@@ -21,24 +20,31 @@ namespace kube_scanner
 
         private static void RunProgram(Options options)
         {
+            // get the folder path to store exported files
             var folderPath = Directory.GetCurrentDirectory();
             
+            // create a Kubernetes client
             var kubeClient = new KubeClient(options.KubeConfigPath);
             
+            // retrieve the unique list of images in the cluster
             var images = kubeClient.GetImages();
             
+            // create the scanner object
             var scanner = options.Scanner == "Trivy" ? new Trivy() : throw new Exception("not supported scanner!");
 
+            // create the exporter object
             var exporter = options.Exporter == "File" ? new FileExporter(folderPath) : throw new Exception("not supported exporter!");
             
-            foreach (var image in images)
+            // scan the images in parallel and save results into the exporter
+            Parallel.ForEach(images, (image) =>
             {
                 Console.WriteLine("Scanning image: {0}", image);
-                var result = scanner.Scan(image);
+                var task = Task.Run<ScanResult>(async () => await scanner.Scan(image));
+                var result = task.Result;
                 exporter.Upload(result);
-            }
+            });
         }
-        
+
         private static void LogErrors(IEnumerable<Error> errors)
         {
             System.Console.ForegroundColor = ConsoleColor.Red;

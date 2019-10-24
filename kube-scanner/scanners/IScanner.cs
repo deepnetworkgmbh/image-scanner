@@ -1,9 +1,10 @@
+using System.Threading.Tasks;
 using kube_scanner.core;
 
 namespace kube_scanner.scanners
 {
     public interface IScanner
     {
-        ScanResult Scan(string imageTag);
+        Task<ScanResult> Scan(string imageTag);
     }
 }

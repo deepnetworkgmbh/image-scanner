@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Mime;
+using System.Threading.Tasks;
 using Docker.DotNet.Models;
 using kube_scanner.core;
 using kube_scanner.helpers;
@@ -19,14 +19,14 @@ namespace kube_scanner.scanners
 
         }
 
-        public ScanResult Scan(string imageToBeScanned)
+        public async Task<ScanResult> Scan(string imageToBeScanned)
         {
             // give a name to container
             var containerName = "trivy-container-"+(new Random().Next(10, 10000));
             
             var outputFile = "/trivy_scan_results/"+containerName;
             
-            var cmd = new string[]
+            var cmd = new[]
             {
                 "-c",
                 "-f", "json",
@@ -50,10 +50,10 @@ namespace kube_scanner.scanners
             var dockerHelper = new DockerHelper(TrivyImage, containerName, cmd, hostConfig);
             
             // start to scan the image
-            dockerHelper.StartContainer(imageToBeScanned).Wait();
+            await dockerHelper.StartContainer(imageToBeScanned);
 
             // remove the container
-            dockerHelper.DisposeAsync().Wait();
+            await dockerHelper.DisposeAsync();
 
             JArray jsonArray;
             
@@ -64,7 +64,7 @@ namespace kube_scanner.scanners
             catch (JsonReaderException e)
             {
                 Console.WriteLine("FATAL error in image scan: failed to scan image {0}: failed to analyze OS: Unknown OS", imageToBeScanned);
-                jsonArray = new JArray(); // empty array for not-scanned images 
+                jsonArray = new JArray(); // empty array for not scanned images 
             }
             
             var trivyScanResult = new ScanResult {ImageName = imageToBeScanned, ScanResultArray = jsonArray};
