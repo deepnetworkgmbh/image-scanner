@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using kube_scanner.core;
@@ -28,7 +29,13 @@ namespace kube_scanner.exporters
 
         public void UploadBulk(IEnumerable<ScanResult> results)
         {
-            throw new System.NotImplementedException();
+            foreach (var r in results)
+            {
+                // write JSON directly to a file
+                var img = r.ImageName.Replace('/', '_');
+            
+                File.WriteAllText(@_folderPath+img+".json", r.ScanResultArray.ToString());    
+            }
         }
     }
 }

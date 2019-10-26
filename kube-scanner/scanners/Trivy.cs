@@ -103,7 +103,7 @@ namespace kube_scanner.scanners
                 while((line = file.ReadLine()) != null)  
                 {  
                     if (line.Contains("FATAL"))
-                        Console.WriteLine(line);
+                        Console.WriteLine("Scan ERROR in {0} :"+line, imageToBeScanned);
                 } 
                 
                 jsonArray = new JArray(); // empty array for not scanned images 

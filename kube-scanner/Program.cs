@@ -20,6 +20,8 @@ namespace kube_scanner
 
         private static void RunProgram(Options options)
         {
+            var scanResults = new List<ScanResult>();
+            
             // get the folder path to store exported files
             var folderPath = Directory.GetCurrentDirectory();
             
@@ -45,8 +47,17 @@ namespace kube_scanner
                 Console.WriteLine("Scanning image: {0}", image);
                 var task = Task.Run<ScanResult>(async () => await scanner.Scan(image));
                 var result = task.Result;
-                exporter.Upload(result);
+                if (options.IsBulkUpload)
+                    scanResults.Add(result);
+                else
+                    exporter.Upload(result);
             });
+
+            // if bulk upload is selected
+            if (options.IsBulkUpload)
+            {
+                exporter.UploadBulk(scanResults);
+            }
         }
 
         private static int CalculateMaxDegreeOfParallelism(int maxParallelismPercent)

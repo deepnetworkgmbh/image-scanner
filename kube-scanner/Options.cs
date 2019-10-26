@@ -24,5 +24,8 @@ namespace kube_scanner
         
         [Option('p', "containerRegistryPassword", Required = false, HelpText = "Container Registry User Password")]
         public string ContainerRegistryPassword { get; set; }
+        
+        [Option('b', "isBulkUpload", Required = false, Default = false, HelpText = "Is bulk upload")]
+        public bool IsBulkUpload { get; set; }
     }
 }
