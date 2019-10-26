@@ -4,7 +4,7 @@ namespace kube_scanner
 {
     public class Options
     {
-        [Option('p', "kubeConfigPath", Required = false, HelpText = "File path of Kube Config file")]
+        [Option('k', "kubeConfigPath", Required = false, HelpText = "File path of Kube Config file")]
         public string KubeConfigPath { get; set; }
         
         [Option('s', "scanner", Required = true, HelpText = "Scanner type (Trivy or Clair")]
@@ -15,5 +15,14 @@ namespace kube_scanner
         
         [Option('m', "maxParallelismPercentage", Required = true, HelpText = "Maximum Degree of Parallelism in Percentage")]
         public int MaxParallelismPercentage { get; set; }
+
+        [Option('c', "containerRegistryAddress", Required = false, HelpText = "Container Registry Address")]
+        public string ContainerRegistryAddress { get; set; }
+        
+        [Option('u', "containerRegistryUserName", Required = false, HelpText = "Container Registry User Name")]
+        public string ContainerRegistryUserName { get; set; }
+        
+        [Option('p', "containerRegistryPassword", Required = false, HelpText = "Container Registry User Password")]
+        public string ContainerRegistryPassword { get; set; }
     }
 }

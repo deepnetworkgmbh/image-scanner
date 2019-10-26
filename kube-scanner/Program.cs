@@ -30,7 +30,7 @@ namespace kube_scanner
             var images = kubeClient.GetImages();
             
             // create the scanner object
-            var scanner = options.Scanner == "Trivy" ? new Trivy() : throw new Exception("not supported scanner!");
+            var scanner = options.Scanner == "Trivy" ? new Trivy(options.ContainerRegistryAddress, options.ContainerRegistryUserName, options.ContainerRegistryPassword) : throw new Exception("not supported scanner!");
 
             // create the exporter object
             var exporter = options.Exporter == "File" ? new FileExporter(folderPath) : throw new Exception("not supported exporter!");
