@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -161,17 +162,28 @@ namespace kube_scanner.helpers
             {
                 Path = filePath
             };
+
+            JArray jsonArray = null;
+            try
+            {
+                var response = await _dockerClient.Containers.GetArchiveFromContainerAsync(_containerId,
+                    parameters, false, default);
                 
-            var response = await _dockerClient.Containers.GetArchiveFromContainerAsync(_containerId,
-                parameters, false, default);
+                var archiveStream = response.Stream;
 
-            var archiveStream = response.Stream;
-
-            if (archiveStream == null) return new JArray(); // return an empty json array if stream is null
+                if (archiveStream == null) return new JArray(); // return an empty json array if stream is null
                 
-            // convert archive stream to JArray object
-            var jsonArray = TarHelper.UnTarIntoJsonArray(archiveStream);
-
+                // convert archive stream to JArray object
+                jsonArray = TarHelper.UnTarIntoJsonArray(archiveStream);
+            }
+            catch (DockerContainerNotFoundException e)
+            {
+                jsonArray = new JArray();
+                
+                var timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss:ffff");
+                Console.WriteLine("{0} Error scanning image {1} , Docker API responded with status code=NotFound, {2}", timeStamp, _cmd.Last(), e.Message);
+            }
+            
             return jsonArray;
         }
 
