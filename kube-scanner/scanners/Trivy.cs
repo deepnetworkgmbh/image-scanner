@@ -51,7 +51,7 @@ namespace kube_scanner.scanners
             };
 
             // If the provided private Container Registry (CR) name is equal to CR of image to be scanned,
-            // add private CR credentials to the trivy container
+            // add private CR credentials to the trivy container as env vars
             var crNameOfImage = imageToBeScanned.Split('/')[0];
             var crNameOfParameter = ContainerRegistryAddress.Split('/')[0];
             var env = new List<string>();
@@ -79,6 +79,14 @@ namespace kube_scanner.scanners
 
             // remove the container
             await dockerHelper.DisposeAsync();
+            
+            foreach(var log in logs.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)) 
+            {
+                if (!log.Contains("FATAL")) continue;
+                
+                Console.WriteLine("SCAN ERROR on Image {0}", imageToBeScanned);
+                Console.WriteLine(log);
+            }
             
             // create a scan result object
             var trivyScanResult = new ScanResult {ImageName = imageToBeScanned, ScanResultArray = jsonArray, Logs = logs};

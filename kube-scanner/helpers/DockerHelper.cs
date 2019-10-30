@@ -4,7 +4,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Chilkat;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Newtonsoft.Json.Linq;
@@ -125,88 +124,57 @@ namespace kube_scanner.helpers
         
         public async Task<string> GetContainerLogsAsync()
         {
-            if (_containerId != null)
+            if (_containerId == null) return string.Empty; // return an empty string if container not exists
+            
+            // wait until the container finishes running
+            await _dockerClient.Containers.WaitContainerAsync(_containerId);
+
+            // create parameters for reading logs
+            var parameters = new ContainerLogsParameters
             {
-                // wait until the container finishes running
-                await _dockerClient.Containers.WaitContainerAsync(_containerId);
+                ShowStdout = true,
+                ShowStderr = true
+            };
 
-                // create parameters for reading logs
-                var parameters = new ContainerLogsParameters
-                {
-                    ShowStdout = true,
-                    ShowStderr = true
-                };
+            // read logs from stream and save into file
+            var logStream = await _dockerClient.Containers.GetContainerLogsAsync(_containerId, 
+                parameters, default);
+                
+            if (logStream == null) return string.Empty; // return an empty string if stream is null
+            
+            // convert log stream to string
+            using var reader = new StreamReader(logStream, Encoding.UTF8);
+            var log = reader.ReadToEnd();
+            
+            return log;
 
-                // read logs from stream and save into file
-                var logStream = await _dockerClient.Containers.GetContainerLogsAsync(_containerId, parameters, default);
-                if (logStream != null)
-                {
-                    using (var reader = new StreamReader(logStream, Encoding.UTF8))
-                    {
-                        var log = reader.ReadToEnd();
-                        return log;
-                    }
-                }
-            }
-
-            return string.Empty;
         }
 
         public async Task<JArray> GetArchiveFromContainerAsync(string filePath)
         {
-            if (_containerId != null)
-            {
-                // wait until the container finishes running
-                await _dockerClient.Containers.WaitContainerAsync(_containerId);
+            if (_containerId == null) return new JArray(); // return an empty json array if container not exists
+            
+            // wait until the container finishes running
+            await _dockerClient.Containers.WaitContainerAsync(_containerId);
 
-                var parameters = new GetArchiveFromContainerParameters
-                {
-                    Path = filePath
-                };
+            var parameters = new GetArchiveFromContainerParameters
+            {
+                Path = filePath
+            };
                 
-                var response = await _dockerClient.Containers.GetArchiveFromContainerAsync(_containerId,
-                    parameters, false, default);
+            var response = await _dockerClient.Containers.GetArchiveFromContainerAsync(_containerId,
+                parameters, false, default);
 
-                var jsonStream = response.Stream;
-               
-                if (jsonStream != null)
-                {
-                    var br = new BinaryReader(jsonStream);
-                    
-                    var bytes = ReadAllBytes(br);
-                    
-                    var tar = new Tar {};
+            var archiveStream = response.Stream;
 
-                    tar.UnlockComponent("Anything for 30-day trial");
-                    
-                    var buffer = tar.UntarFirstMatchingToMemory(bytes, string.Empty);
-            
-                    var converted = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
+            if (archiveStream == null) return new JArray(); // return an empty json array if stream is null
+                
+            // convert archive stream to JArray object
+            var jsonArray = TarHelper.UnTarIntoJsonArray(archiveStream);
 
-                    if (string.IsNullOrEmpty(converted)) converted = "[]";
-
-                    var jsonArray = JArray.Parse(converted); 
-
-                    return jsonArray;
-                }
-            }
-            
-            return new JArray(); // return an empty json array if anything goes wrong
+            return jsonArray;
         }
 
-        private static byte[] ReadAllBytes(BinaryReader reader)
-        {
-            const int bufferSize = 4096;
-            using (var ms = new MemoryStream())
-            {
-                byte[] buffer = new byte[bufferSize];
-                int count;
-                while ((count = reader.Read(buffer, 0, buffer.Length)) != 0)
-                    ms.Write(buffer, 0, count);
-                return ms.ToArray();
-            }
-        }
-        
         public async Task DisposeAsync()
         {
             if (_containerId != null)
