@@ -45,7 +45,7 @@ namespace kube_scanner
             
             Console.WriteLine("Kube-Scanner is running on {0}% parallelization degree", options.MaxParallelismPercentage);
             Console.WriteLine("The computer has {0} logical CPUs", Environment.ProcessorCount);
-            Console.WriteLine("{0} number of CPU being used", mdop);
+            Console.WriteLine("{0} CPU being used", mdop);
             
             // scan the images in parallel and save results into the exporter
             Parallel.ForEach(images, opt, (image) =>
