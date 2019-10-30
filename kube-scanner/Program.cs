@@ -43,10 +43,15 @@ namespace kube_scanner
             var mdop = CalculateMaxDegreeOfParallelism(options.MaxParallelismPercentage);
             var opt = new ParallelOptions {MaxDegreeOfParallelism = mdop};
             
+            Console.WriteLine("Kube-Scanner is running on {0}% parallelization degree", options.MaxParallelismPercentage);
+            Console.WriteLine("The computer has {0} logical CPUs", Environment.ProcessorCount);
+            Console.WriteLine("{0} number of CPU being used", mdop);
+            
             // scan the images in parallel and save results into the exporter
             Parallel.ForEach(images, opt, (image) =>
             {
-                Console.WriteLine("Scanning image: {0}", image);
+                var timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss:ffff");
+                Console.WriteLine("{0} Scanning image: {1}", timeStamp, image);
                 var task = Task.Run<ScanResult>(async () => await scanner.Scan(image));
                 var result = task.Result;
                 if (options.IsBulkUpload)
@@ -60,6 +65,10 @@ namespace kube_scanner
             {
                 exporter.UploadBulk(scanResults);
             }
+            
+            // write finish message
+            var timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss:ffff");
+            Console.WriteLine("{0} Kube-Scanner finished execution", timeStamp);
         }
 
         private static int CalculateMaxDegreeOfParallelism(int maxParallelismPercent)

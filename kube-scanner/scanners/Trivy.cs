@@ -27,7 +27,7 @@ namespace kube_scanner.scanners
         public async Task<ScanResult> Scan(string imageToBeScanned)
         {
             // give a name to container
-            var containerName = "trivy-container-"+(new Random().Next(10, 10000));
+            var containerName = "trivy-container-"+(new Random().Next(10000, 100000));
          
             // set the scan result file name
             var scanResultFile = "/"+containerName;
@@ -83,9 +83,12 @@ namespace kube_scanner.scanners
             foreach(var log in logs.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)) 
             {
                 if (!log.Contains("FATAL")) continue;
-                
-                Console.WriteLine("SCAN ERROR on Image {0}", imageToBeScanned);
-                Console.WriteLine(log);
+
+                var logText = log.Split("FATAL")[1];
+                var timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss:ffff");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("{0} Scan ERROR on image: {1} {2}", timeStamp, imageToBeScanned, logText);
+                Console.ResetColor();
             }
             
             // create a scan result object
