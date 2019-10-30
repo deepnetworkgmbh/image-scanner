@@ -11,5 +11,8 @@ namespace kube_scanner.core
         
         [JsonProperty(PropertyName = "scanResultArray")]
         public JArray ScanResultArray { get; set; }
+        
+        [JsonProperty(PropertyName = "logs")]
+        public string Logs { get; set; }
     }
 }

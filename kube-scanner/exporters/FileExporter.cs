@@ -11,12 +11,14 @@ namespace kube_scanner.exporters
 
         public FileExporter(string folderPath)
         {
-            var fp = $"{folderPath}/files/";
-
-            if (!Directory.Exists(fp))
-                Directory.CreateDirectory(fp);
+            // if folder path is not provided, use default folder
+            if (string.IsNullOrEmpty(folderPath))
+                folderPath = (Environment.GetFolderPath(Environment.SpecialFolder.Personal)+"/.kube-scanner");
             
-            _folderPath = fp;
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+            
+            _folderPath = folderPath;
         }
 
         public void Upload(ScanResult result)
@@ -24,7 +26,10 @@ namespace kube_scanner.exporters
             // write JSON directly to a file
             var img = result.ImageName.Replace('/', '_');
             
-            File.WriteAllText(@_folderPath+img+".json", result.ScanResultArray.ToString());
+            File.WriteAllText(@_folderPath+"/"+img+".json", result.ScanResultArray.ToString());
+            
+            // write logs
+            File.WriteAllText(@_folderPath+"/"+img+".log", result.Logs);
         }
 
         public void UploadBulk(IEnumerable<ScanResult> results)
@@ -34,7 +39,10 @@ namespace kube_scanner.exporters
                 // write JSON directly to a file
                 var img = r.ImageName.Replace('/', '_');
             
-                File.WriteAllText(@_folderPath+img+".json", r.ScanResultArray.ToString());    
+                File.WriteAllText(@_folderPath+"/"+img+".json", r.ScanResultArray.ToString());
+                
+                // write logs
+                File.WriteAllText(@_folderPath+"/"+img+".log", r.Logs);
             }
         }
     }

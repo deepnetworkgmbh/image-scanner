@@ -4,8 +4,11 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Chilkat;
 using Docker.DotNet;
 using Docker.DotNet.Models;
+using Newtonsoft.Json.Linq;
+using Task = System.Threading.Tasks.Task;
 
 namespace kube_scanner.helpers
 {
@@ -58,20 +61,10 @@ namespace kube_scanner.helpers
 
         private void PullImage(string image)
         {
-            string imageUri = string.Empty, imageTag;
-            
             // split the image name into uri and tag
             var imageStrings = image.Split(':');
-            
-            try
-            {
-                imageUri = imageStrings[0];
-                imageTag = imageStrings[1];
-            }
-            catch (Exception e)
-            {
-                imageTag = "latest"; // if an image doesn't own a tag, then it is the latest
-            }
+            var imageUri = imageStrings[0];
+            var imageTag = imageStrings[1];
 
             // pull the image
             _dockerClient.Images
@@ -103,7 +96,34 @@ namespace kube_scanner.helpers
             await _dockerClient.Containers.StartContainerAsync(_containerId, new ContainerStartParameters());
         }
 
-        public async Task WriteContainerLogs()
+        public async Task WriteContainerLogsAsync(string logFile)
+        {
+            if (_containerId != null)
+            {
+                // wait until the container finishes running
+                await _dockerClient.Containers.WaitContainerAsync(_containerId);
+
+                // create parameters for reading logs
+                var parameters = new ContainerLogsParameters
+                {
+                    ShowStdout = true,
+                    ShowStderr = true
+                };
+                
+                // read logs from stream and save into file
+                var logStream = await _dockerClient.Containers.GetContainerLogsAsync(_containerId, parameters, default);
+                if (logStream != null)
+                {
+                    using (var reader = new StreamReader(logStream, Encoding.UTF8))
+                    {
+                        var log = reader.ReadToEnd();
+                        File.AppendAllText(logFile, log);
+                    }
+                }
+            }
+        }
+        
+        public async Task<string> GetContainerLogsAsync()
         {
             if (_containerId != null)
             {
@@ -117,12 +137,6 @@ namespace kube_scanner.helpers
                     ShowStderr = true
                 };
 
-                // create the log directory
-                var folderPath = Directory.GetCurrentDirectory();
-                var fp = $"{folderPath}/logs/";
-                if (!Directory.Exists(fp))
-                    Directory.CreateDirectory(fp);
-
                 // read logs from stream and save into file
                 var logStream = await _dockerClient.Containers.GetContainerLogsAsync(_containerId, parameters, default);
                 if (logStream != null)
@@ -130,12 +144,69 @@ namespace kube_scanner.helpers
                     using (var reader = new StreamReader(logStream, Encoding.UTF8))
                     {
                         var log = reader.ReadToEnd();
-                        File.AppendAllText(fp + _containerName + ".log", log);
+                        return log;
                     }
                 }
             }
+
+            return string.Empty;
         }
 
+        public async Task<JArray> GetArchiveFromContainerAsync(string filePath)
+        {
+            if (_containerId != null)
+            {
+                // wait until the container finishes running
+                await _dockerClient.Containers.WaitContainerAsync(_containerId);
+
+                var parameters = new GetArchiveFromContainerParameters
+                {
+                    Path = filePath
+                };
+                
+                var response = await _dockerClient.Containers.GetArchiveFromContainerAsync(_containerId,
+                    parameters, false, default);
+
+                var jsonStream = response.Stream;
+               
+                if (jsonStream != null)
+                {
+                    var br = new BinaryReader(jsonStream);
+                    
+                    var bytes = ReadAllBytes(br);
+                    
+                    var tar = new Tar {};
+
+                    tar.UnlockComponent("Anything for 30-day trial");
+                    
+                    var buffer = tar.UntarFirstMatchingToMemory(bytes, string.Empty);
+            
+                    var converted = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
+
+                    if (string.IsNullOrEmpty(converted)) converted = "[]";
+
+                    var jsonArray = JArray.Parse(converted); 
+
+                    return jsonArray;
+                }
+            }
+            
+            return new JArray(); // return an empty json array if anything goes wrong
+        }
+
+        private static byte[] ReadAllBytes(BinaryReader reader)
+        {
+            const int bufferSize = 4096;
+            using (var ms = new MemoryStream())
+            {
+                byte[] buffer = new byte[bufferSize];
+                int count;
+                while ((count = reader.Read(buffer, 0, buffer.Length)) != 0)
+                    ms.Write(buffer, 0, count);
+                return ms.ToArray();
+            }
+        }
+        
         public async Task DisposeAsync()
         {
             if (_containerId != null)

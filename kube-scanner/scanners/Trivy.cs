@@ -12,67 +12,56 @@ namespace kube_scanner.scanners
 {
     public class Trivy : IScanner
     {
-        private readonly string _containerRegistryAddress;
-        private readonly string _containerRegistryUserName;
-        private readonly string _containerRegistryPassword;
-        private  const string TrivyImage = "aquasec/trivy:latest";
-         
-        public Trivy(string containerRegistryAddress, string containerRegistryUserName, string containerRegistryPassword)
+        private const string TrivyImage = "aquasec/trivy:latest";
+        private readonly string _cachePath;
+        
+        public string ContainerRegistryAddress { get; set; }
+        public string ContainerRegistryUserName { get; set; }
+        public string ContainerRegistryPassword { get; set; }
+        
+        public Trivy(string cachePath)
         {
-            _containerRegistryAddress  = containerRegistryAddress;
-            _containerRegistryUserName = containerRegistryUserName;
-            _containerRegistryPassword = containerRegistryPassword;
+            _cachePath  = cachePath;
         }
 
         public async Task<ScanResult> Scan(string imageToBeScanned)
-        { 
+        {
             // give a name to container
             var containerName = "trivy-container-"+(new Random().Next(10, 10000));
-            
-            // set the output file name that keeps scan result (json)
-            var outputFile = "/trivy_scan_results/"+containerName;
+         
+            // set the scan result file name
+            var scanResultFile = "/"+containerName;
             
             // commands that will be executed by trivy container
             var cmd = new[]
             {
                 "-c",
                 "-f", "json",
-                "-o", outputFile,
+                "-o", scanResultFile,
                 imageToBeScanned
             };
-
-            // get the path of the running directory
-            var folderPath = Directory.GetCurrentDirectory();
             
             // set the volumes will be mounted to trivy container
             var hostConfig = new HostConfig
             {
                 Binds = new List<string>
                 {
-                    folderPath + "/Library/Caches:/root/.cache/",
-                    folderPath + "/trivy_scan_results:/trivy_scan_results"
-                },
-                DNS = new List<string>{},
-                DNSOptions = new List<string>{},
-                DNSSearch = new List<string>{},
-                PortBindings = new Dictionary<string, IList<PortBinding>>(),
-                Devices = new List<DeviceMapping>(),
-                BlkioWeightDevice = new List<WeightDevice>(),
-                RestartPolicy = new RestartPolicy{Name = RestartPolicyKind.No, MaximumRetryCount = 0}
+                    _cachePath  + ":/root/.cache/"
+                }
             };
 
             // If the provided private Container Registry (CR) name is equal to CR of image to be scanned,
             // add private CR credentials to the trivy container
             var crNameOfImage = imageToBeScanned.Split('/')[0];
-            var crNameOfParameter = _containerRegistryAddress.Split('/')[0];
+            var crNameOfParameter = ContainerRegistryAddress.Split('/')[0];
             var env = new List<string>();
             if (crNameOfParameter == crNameOfImage)
             {
                 env.AddRange(new string[]
                 {
-                    "TRIVY_AUTH_URL="+_containerRegistryAddress, 
-                    "TRIVY_USERNAME="+_containerRegistryUserName,
-                    "TRIVY_PASSWORD="+_containerRegistryPassword             
+                    "TRIVY_AUTH_URL="+ContainerRegistryAddress, 
+                    "TRIVY_USERNAME="+ContainerRegistryUserName,
+                    "TRIVY_PASSWORD="+ContainerRegistryPassword             
                 });
             }
 
@@ -81,36 +70,18 @@ namespace kube_scanner.scanners
             
             // start to scan the image
             await dockerHelper.StartContainer();
+
+            // get json array from container
+            var jsonArray = await dockerHelper.GetArchiveFromContainerAsync(scanResultFile);
             
-            // write container logs into log files
-            await dockerHelper.WriteContainerLogs();                          
+            // get logs from container
+            var logs = await dockerHelper.GetContainerLogsAsync();
 
             // remove the container
             await dockerHelper.DisposeAsync();
             
-            // read the output file into a JSON array,
-            // if the file is empty, put an empty array
-            JArray jsonArray;
-            try
-            {
-                jsonArray = JArray.Parse(File.ReadAllText(@folderPath+outputFile));
-            }
-            catch (JsonReaderException e)
-            {
-                // write error to the console
-                string line;
-                var file = new StreamReader(@folderPath + "/logs/"+containerName+".log"); 
-                while((line = file.ReadLine()) != null)  
-                {  
-                    if (line.Contains("FATAL"))
-                        Console.WriteLine("Scan ERROR in {0} :"+line, imageToBeScanned);
-                } 
-                
-                jsonArray = new JArray(); // empty array for not scanned images 
-            }
-            
             // create a scan result object
-            var trivyScanResult = new ScanResult {ImageName = imageToBeScanned, ScanResultArray = jsonArray};
+            var trivyScanResult = new ScanResult {ImageName = imageToBeScanned, ScanResultArray = jsonArray, Logs = logs};
 
             return trivyScanResult;
         }

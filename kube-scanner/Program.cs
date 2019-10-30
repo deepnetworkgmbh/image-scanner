@@ -20,10 +20,7 @@ namespace kube_scanner
 
         private static void RunProgram(Options options)
         {
-            var scanResults = new List<ScanResult>();
-            
-            // get the folder path to store exported files
-            var folderPath = Directory.GetCurrentDirectory();
+            var scanResults = new List<ScanResult>(); // list of scan results
             
             // create a Kubernetes client
             var kubeClient = new KubeClient(options.KubeConfigPath);
@@ -32,10 +29,15 @@ namespace kube_scanner
             var images = kubeClient.GetImages();
             
             // create the scanner object
-            var scanner = options.Scanner == "Trivy" ? new Trivy(options.ContainerRegistryAddress, options.ContainerRegistryUserName, options.ContainerRegistryPassword) : throw new Exception("not supported scanner!");
+            var scanner = options.Scanner == "Trivy" ? new Trivy(options.CachePath) : throw new Exception("not supported scanner!");
 
+            // set private container registry credentials
+            scanner.ContainerRegistryAddress  = options.ContainerRegistryAddress;
+            scanner.ContainerRegistryUserName = options.ContainerRegistryUserName;
+            scanner.ContainerRegistryPassword = options.ContainerRegistryPassword;
+            
             // create the exporter object
-            var exporter = options.Exporter == "File" ? new FileExporter(folderPath) : throw new Exception("not supported exporter!");
+            var exporter = options.Exporter == "File" ? new FileExporter(options.FileExporterPath) : throw new Exception("not supported exporter!");
 
             // calculate max degree of parallelism and create the parallel options object
             var mdop = CalculateMaxDegreeOfParallelism(options.MaxParallelismPercentage);
