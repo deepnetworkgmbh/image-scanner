@@ -1,30 +1,57 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using k8s;
+using k8s.Exceptions;
+using kube_scanner.helpers;
 using static k8s.KubernetesClientConfiguration;
 
 namespace kube_scanner.core
 {
     public class KubeClient
     {
-        
         private readonly KubernetesClientConfiguration _kubeConfig;
-        
+
         public KubeClient(string kubeConfig)
         {
-            _kubeConfig = BuildConfigFromConfigFile(kubeConfig);
+            try
+            {
+                // check if kube config is accessible
+                _kubeConfig = BuildConfigFromConfigFile(kubeConfig);
+            }
+            catch (KubeConfigException e)
+            {
+                LogHelper.LogErrorsAndExit(e.Message);
+            }
+            catch (Exception ex) when (ex.Source == "System.Security.Cryptography.X509Certificates")
+            {
+                LogHelper.LogErrorsAndExit("KubeConfig OpenSsl Certificate Error", ex.Message);
+            }
         }
 
         public IEnumerable<string> GetImages()
         {
-            // use the config object to create a client.
-            var kubeClient = new Kubernetes(_kubeConfig);
-
-            // get the pod list
-            var podList = kubeClient.ListPodForAllNamespaces();
+            List<string> imageList = null;
             
-            // generate a unique list of images
-            var imageList = (from pod in podList.Items from container in pod.Spec.Containers select container.Image).Distinct().ToList();
+            try
+            {
+                // use the config object to create a client.
+                var kubeClient = new Kubernetes(_kubeConfig);
+
+                // get the pod list
+                var podList = kubeClient.ListPodForAllNamespaces();
+            
+                // generate a unique list of images
+                imageList = (from pod in podList.Items from container in pod.Spec.Containers select container.Image).Distinct().ToList();
+                
+                return imageList;
+            }
+            catch (HttpRequestException e)
+            {
+                // if kubernetes cluster is not accessible
+                LogHelper.LogErrorsAndExit(e.Message);
+            }
 
             return imageList;
         }

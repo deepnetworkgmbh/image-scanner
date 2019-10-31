@@ -4,8 +4,8 @@ namespace kube_scanner
 {
     public class Options
     {
-        [Option('a', "cachePath", Required = false, HelpText = "Folder path of Trivy cache files")]
-        public string CachePath { get; set; }
+        [Option('a', "trivyCachePath", Required = false, HelpText = "Folder path of Trivy cache files")]
+        public string TrivyCachePath { get; set; }
         
         [Option('f', "fileExporterPath", Required = false, HelpText = "Folder path of file exporter")]
         public string FileExporterPath { get; set; }
@@ -13,13 +13,13 @@ namespace kube_scanner
         [Option('k', "kubeConfigPath", Required = false, HelpText = "File path of Kube Config file")]
         public string KubeConfigPath { get; set; }
         
-        [Option('s', "scanner", Required = true, HelpText = "Scanner type (Trivy or Clair")]
+        [Option('s', "scanner", Required = true, HelpText = "Scanner type (e.g, Trivy")]
         public string Scanner { get; set; }        
         
-        [Option('e', "exporter", Required = true, HelpText = "Exporter type (File or ..")]
+        [Option('e', "exporter", Required = true, HelpText = "Exporter type (e.g, File")]
         public string Exporter { get; set; }
         
-        [Option('m', "maxParallelismPercentage", Required = true, HelpText = "Maximum Degree of Parallelism in Percentage")]
+        [Option('m', "maxParallelismPercentage", Required = false, Default = 10, HelpText = "Maximum Degree of Parallelism in Percentage")]
         public int MaxParallelismPercentage { get; set; }
 
         [Option('c', "containerRegistryAddress", Required = false, HelpText = "Container Registry Address")]

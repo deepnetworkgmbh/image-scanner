@@ -13,7 +13,7 @@ namespace kube_scanner.exporters
         {
             // if folder path is not provided, use default folder
             if (string.IsNullOrEmpty(folderPath))
-                folderPath = (Environment.GetFolderPath(Environment.SpecialFolder.Personal)+"/.kube-scanner");
+                folderPath = (Environment.GetFolderPath(Environment.SpecialFolder.Personal)+"/.kube-scanner/exports");
             
             if (!Directory.Exists(folderPath))
                 Directory.CreateDirectory(folderPath);

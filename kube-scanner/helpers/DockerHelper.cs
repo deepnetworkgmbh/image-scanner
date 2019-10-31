@@ -39,7 +39,7 @@ namespace kube_scanner.helpers
             PullImage(containerImage);
         }
 
-        private string DockerApiUri()
+        private static string DockerApiUri()
         {
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
@@ -66,15 +66,27 @@ namespace kube_scanner.helpers
             var imageUri = imageStrings[0];
             var imageTag = imageStrings[1];
 
-            // pull the image
-            _dockerClient.Images
-                .CreateImageAsync(new ImagesCreateParameters
-                    {
-                        FromImage = imageUri,
-                        Tag = imageTag
-                    },
-                    new AuthConfig(),
-                    new Progress<JSONMessage>()).Wait();            
+            try
+            {
+                // pull the image
+                _dockerClient.Images
+                    .CreateImageAsync(new ImagesCreateParameters
+                        {
+                            FromImage = imageUri,
+                            Tag = imageTag
+                        },
+                        new AuthConfig(),
+                        new Progress<JSONMessage>()).Wait();
+            }
+            catch (AggregateException ae)
+            {
+
+                LogHelper.LogErrorsAndExit(
+                    "kube-scanner needs Docker to be installed beforehand.",
+                    "If you're running kube-scanner from Docker image, you need to mount /var/run/docker.sock.",
+                    ae.Message
+                );
+            }
         }
 
         public async Task StartContainer()
@@ -111,14 +123,12 @@ namespace kube_scanner.helpers
                 };
                 
                 // read logs from stream and save into file
-                var logStream = await _dockerClient.Containers.GetContainerLogsAsync(_containerId, parameters, default);
+                var logStream = await _dockerClient.Containers.GetContainerLogsAsync(_containerId, parameters);
                 if (logStream != null)
                 {
-                    using (var reader = new StreamReader(logStream, Encoding.UTF8))
-                    {
-                        var log = reader.ReadToEnd();
-                        File.AppendAllText(logFile, log);
-                    }
+                    using var reader = new StreamReader(logStream, Encoding.UTF8);
+                    var log = reader.ReadToEnd();
+                    File.AppendAllText(logFile, log);
                 }
             }
         }
@@ -139,7 +149,7 @@ namespace kube_scanner.helpers
 
             // read logs from stream and save into file
             var logStream = await _dockerClient.Containers.GetContainerLogsAsync(_containerId, 
-                parameters, default);
+                parameters);
                 
             if (logStream == null) return string.Empty; // return an empty string if stream is null
             
@@ -163,11 +173,11 @@ namespace kube_scanner.helpers
                 Path = filePath
             };
 
-            JArray jsonArray = null;
+            JArray jsonArray;
             try
             {
                 var response = await _dockerClient.Containers.GetArchiveFromContainerAsync(_containerId,
-                    parameters, false, default);
+                    parameters, false);
                 
                 var archiveStream = response.Stream;
 
@@ -179,9 +189,7 @@ namespace kube_scanner.helpers
             catch (DockerContainerNotFoundException e)
             {
                 jsonArray = new JArray();
-                
-                var timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss:ffff");
-                Console.WriteLine("{0} Error scanning image {1} , Docker API responded with status code=NotFound, {2}", timeStamp, _cmd.Last(), e.Message);
+                LogHelper.LogErrorsAndContinue("Error scanning image", _cmd.Last(), "Docker API responded with status code=NotFound",  e.Message);
             }
             
             return jsonArray;

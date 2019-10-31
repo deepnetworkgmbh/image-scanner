@@ -1,58 +1,71 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using CommandLine;
 using kube_scanner.core;
 using kube_scanner.exporters;
 using kube_scanner.scanners;
 using System.Threading.Tasks;
+using kube_scanner.helpers;
 
 namespace kube_scanner
 {
-    class Program
+    internal static class Program
     {
         private static void Main(string[] args)
         {
-                var result = Parser.Default.ParseArguments<Options>(args)
+                Parser.Default.ParseArguments<Options>(args)
                     .WithParsed(RunProgram)
-                    .WithNotParsed(LogErrors);
+                    .WithNotParsed(LogHelper.LogErrors);
         }
 
         private static void RunProgram(Options options)
         {
             var scanResults = new List<ScanResult>(); // list of scan results
             
+            // initialize variables
+            IScanner scanner = null;
+            IExporter exporter = null;
+            
+            try
+            {
+                // create the scanner object
+                scanner = options.Scanner == "Trivy" ? new Trivy(options.TrivyCachePath) : throw new Exception("unsupported scanner: "+ options.Scanner);
+                
+                // set private container registry credentials
+                scanner.ContainerRegistryAddress  = options.ContainerRegistryAddress;
+                scanner.ContainerRegistryUserName = options.ContainerRegistryUserName;
+                scanner.ContainerRegistryPassword = options.ContainerRegistryPassword;
+                
+                // create the exporter object
+                exporter = options.Exporter == "File" ? new FileExporter(options.FileExporterPath) : throw new Exception("unsupported exporter: "+ options.Exporter);
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogErrorsAndExit(e.Message);
+                Environment.Exit(1);
+            }
+
             // create a Kubernetes client
             var kubeClient = new KubeClient(options.KubeConfigPath);
             
             // retrieve the unique list of images in the cluster
             var images = kubeClient.GetImages();
             
-            // create the scanner object
-            var scanner = options.Scanner == "Trivy" ? new Trivy(options.CachePath) : throw new Exception("not supported scanner!");
-
-            // set private container registry credentials
-            scanner.ContainerRegistryAddress  = options.ContainerRegistryAddress;
-            scanner.ContainerRegistryUserName = options.ContainerRegistryUserName;
-            scanner.ContainerRegistryPassword = options.ContainerRegistryPassword;
-            
-            // create the exporter object
-            var exporter = options.Exporter == "File" ? new FileExporter(options.FileExporterPath) : throw new Exception("not supported exporter!");
-
             // calculate max degree of parallelism and create the parallel options object
             var mdop = CalculateMaxDegreeOfParallelism(options.MaxParallelismPercentage);
             var opt = new ParallelOptions {MaxDegreeOfParallelism = mdop};
             
-            Console.WriteLine("Kube-Scanner is running on {0}% parallelization degree", options.MaxParallelismPercentage);
-            Console.WriteLine("The computer has {0} logical CPUs", Environment.ProcessorCount);
-            Console.WriteLine("{0} CPU being used", mdop);
+            // write start messages
+            LogHelper.LogMessages("Kube-Scanner is running on parallelization degree", options.MaxParallelismPercentage);
+            LogHelper.LogMessages("The number of logical CPU is", Environment.ProcessorCount);
+            LogHelper.LogMessages("The number of CPU being used is", mdop);
             
             // scan the images in parallel and save results into the exporter
             Parallel.ForEach(images, opt, (image) =>
             {
-                var timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss:ffff");
-                Console.WriteLine("{0} Scanning image: {1}", timeStamp, image);
-                var task = Task.Run<ScanResult>(async () => await scanner.Scan(image));
+                LogHelper.LogMessages("Scanning image", image);
+                
+                var task = Task.Run(async () => await scanner.Scan(image));
                 var result = task.Result;
                 if (options.IsBulkUpload)
                     scanResults.Add(result);
@@ -67,31 +80,28 @@ namespace kube_scanner
             }
             
             // write finish message
-            var timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss:ffff");
-            Console.WriteLine("{0} Kube-Scanner finished execution", timeStamp);
+            LogHelper.LogMessages("Kube-Scanner finished execution");
+
         }
 
         private static int CalculateMaxDegreeOfParallelism(int maxParallelismPercent)
         {
-            if ((Environment.ProcessorCount) == 0)
-                return -1; // there is no limit on the number of concurrently running operations
+            var pc = Environment.ProcessorCount;
+
+            if (pc == 0) return -1; // there is no limit on the number of concurrently running operations
             
-            var floatDegree = (float) ((Environment.ProcessorCount) * maxParallelismPercent) / 100;
+            if ((maxParallelismPercent > 100) || (maxParallelismPercent < 1))
+            {
+                LogHelper.LogErrorsAndExit(
+                    "Parallelism percent should be between 1-100. You typed",
+                    maxParallelismPercent
+                );
+            }
+            
+            var floatDegree = (float) (pc * maxParallelismPercent) / 100;
             var intDegree = (int) Math.Ceiling(floatDegree);
 
             return intDegree;
-        }
-
-        private static void LogErrors(IEnumerable<Error> errors)
-        {
-            System.Console.ForegroundColor = ConsoleColor.Red;
-            System.Console.WriteLine("Program wasn't able to parse your input");
-            foreach (var error in errors)
-            {
-                System.Console.WriteLine(error);
-            }
-
-            System.Console.ForegroundColor = ConsoleColor.Gray;
         }
     }
 }

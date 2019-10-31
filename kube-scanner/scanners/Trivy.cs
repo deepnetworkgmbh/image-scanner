@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using Docker.DotNet.Models;
 using kube_scanner.core;
 using kube_scanner.helpers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace kube_scanner.scanners
 {
@@ -14,15 +11,20 @@ namespace kube_scanner.scanners
     {
         private const string TrivyImage = "aquasec/trivy:latest";
         private readonly string _cachePath;
-        
+
+        public Trivy(string cachePath)
+        {
+            if (string.IsNullOrEmpty(cachePath))
+            {
+                cachePath = (Environment.GetFolderPath(Environment.SpecialFolder.Personal)+"/.kube-scanner/.trivycache");
+            }
+            
+            _cachePath  = cachePath;
+        }
+
         public string ContainerRegistryAddress { get; set; }
         public string ContainerRegistryUserName { get; set; }
         public string ContainerRegistryPassword { get; set; }
-        
-        public Trivy(string cachePath)
-        {
-            _cachePath  = cachePath;
-        }
 
         public async Task<ScanResult> Scan(string imageToBeScanned)
         {
@@ -50,19 +52,24 @@ namespace kube_scanner.scanners
                 }
             };
 
+            
             // If the provided private Container Registry (CR) name is equal to CR of image to be scanned,
             // add private CR credentials to the trivy container as env vars
-            var crNameOfImage = imageToBeScanned.Split('/')[0];
-            var crNameOfParameter = ContainerRegistryAddress.Split('/')[0];
             var env = new List<string>();
-            if (crNameOfParameter == crNameOfImage)
+            if (!string.IsNullOrEmpty(ContainerRegistryAddress))
             {
-                env.AddRange(new string[]
+                var crNameOfImage = imageToBeScanned.Split('/')[0];
+                var crNameOfParameter = ContainerRegistryAddress.Split('/')[0];
+
+                if (crNameOfParameter == crNameOfImage)
                 {
-                    "TRIVY_AUTH_URL="+ContainerRegistryAddress, 
-                    "TRIVY_USERNAME="+ContainerRegistryUserName,
-                    "TRIVY_PASSWORD="+ContainerRegistryPassword             
-                });
+                    env.AddRange(new[]
+                    {
+                        "TRIVY_AUTH_URL=" + ContainerRegistryAddress,
+                        "TRIVY_USERNAME=" + ContainerRegistryUserName,
+                        "TRIVY_PASSWORD=" + ContainerRegistryPassword
+                    });
+                }
             }
 
             // create docker helper
@@ -80,15 +87,12 @@ namespace kube_scanner.scanners
             // remove the container
             await dockerHelper.DisposeAsync();
             
-            foreach(var log in logs.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)) 
+            foreach(var log in logs.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)) 
             {
                 if (!log.Contains("FATAL")) continue;
 
                 var logText = log.Split("FATAL")[1];
-                var timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss:ffff");
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("{0} Scan ERROR on image: {1} {2}", timeStamp, imageToBeScanned, logText);
-                Console.ResetColor();
+                LogHelper.LogErrorsAndContinue(imageToBeScanned, logText);
             }
             
             // create a scan result object
