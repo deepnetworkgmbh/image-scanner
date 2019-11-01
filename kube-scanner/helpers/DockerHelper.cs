@@ -203,5 +203,17 @@ namespace kube_scanner.helpers
                 await _dockerClient.Containers.RemoveContainerAsync(_containerId, new ContainerRemoveParameters());
             }
         }
+        
+        public static string CreateRandomContainerName(string prefix, int length)
+        { 
+            var random = new Random();
+        
+            const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+            
+            var str = new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+
+            return prefix + str;
+        }
     }
 }

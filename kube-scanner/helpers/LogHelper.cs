@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using CommandLine;
 
 namespace kube_scanner.helpers
 {
@@ -40,18 +38,6 @@ namespace kube_scanner.helpers
             var logMsg = messages.Aggregate(string.Empty, (current, message) => current + message + " ");
 
             Console.WriteLine("{0} {1}", GetTimeStamp(), logMsg);
-        }
-        
-        public static void LogErrors(IEnumerable<Error> errors)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Program wasn't able to parse your input");
-            foreach (var error in errors)
-            {
-                Console.WriteLine(error);
-            }
-
-            Console.ForegroundColor = ConsoleColor.Gray;
         }
     }
 }

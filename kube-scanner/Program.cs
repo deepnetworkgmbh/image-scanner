@@ -6,38 +6,73 @@ using kube_scanner.exporters;
 using kube_scanner.scanners;
 using System.Threading.Tasks;
 using kube_scanner.helpers;
+using kube_scanner.options;
 
 namespace kube_scanner
 {
     internal static class Program
     {
+        private static readonly List<ScanResult> 
+            ScanResults = new List<ScanResult>(); // list of scan results
+        
+        private static IEnumerable<string> _images; // list of unique images 
+        
+        private static IScanner _scanner;
+        
+        private static IExporter _exporter;
+        
+
         private static void Main(string[] args)
         {
-                Parser.Default.ParseArguments<Options>(args)
-                    .WithParsed(RunProgram)
-                    .WithNotParsed(LogHelper.LogErrors);
-        }
-
-        private static void RunProgram(Options options)
-        {
-            var scanResults = new List<ScanResult>(); // list of scan results
-            
-            // initialize variables
-            IScanner scanner = null;
-            IExporter exporter = null;
-            
             try
             {
-                // create the scanner object
-                scanner = options.Scanner == "Trivy" ? new Trivy(options.TrivyCachePath) : throw new Exception("unsupported scanner: "+ options.Scanner);
-                
+                Parser.Default.ParseArguments<TrivyOptions, ClairOptions>(args)
+                    .WithParsed<TrivyOptions>(RunTrivy)
+                    .WithParsed<ClairOptions>(RunClair);
+            }
+            catch (NotImplementedException e)
+            {
+                LogHelper.LogErrorsAndExit(e.Message);
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogErrorsAndExit("Something went wrong!", e.Message);
+            }
+        }
+
+        private static void RunClair(ClairOptions obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void RunTrivy(TrivyOptions trivyOptions)
+        {
+            // create kube client and get the list of unique images
+            RetrieveImagesFromKube(trivyOptions);
+            
+            // create the scanner object and set private cr credentials
+            _scanner = new Trivy(trivyOptions.TrivyCachePath)
+            {
                 // set private container registry credentials
-                scanner.ContainerRegistryAddress  = options.ContainerRegistryAddress;
-                scanner.ContainerRegistryUserName = options.ContainerRegistryUserName;
-                scanner.ContainerRegistryPassword = options.ContainerRegistryPassword;
-                
+                ContainerRegistryAddress = trivyOptions.ContainerRegistryAddress,
+                ContainerRegistryUserName = trivyOptions.ContainerRegistryUserName,
+                ContainerRegistryPassword = trivyOptions.ContainerRegistryPassword
+            };
+
+            // run scanner and upload outputs into exporter
+            RunScannerAndUpload(trivyOptions);
+            
+            // write finish message
+            LogHelper.LogMessages("kube-scanner finished execution");
+        }
+
+        private static void RetrieveImagesFromKube(GlobalOptions options)
+        {
+            try
+            {
                 // create the exporter object
-                exporter = options.Exporter == "File" ? new FileExporter(options.FileExporterPath) : throw new Exception("unsupported exporter: "+ options.Exporter);
+                _exporter = options.Exporter == "File" ? new FileExporter(options.FileExporterPath) 
+                    : throw new Exception("unsupported exporter: "+ options.Exporter);
             }
             catch (Exception e)
             {
@@ -49,39 +84,41 @@ namespace kube_scanner
             var kubeClient = new KubeClient(options.KubeConfigPath);
             
             // retrieve the unique list of images in the cluster
-            var images = kubeClient.GetImages();
-            
+            _images = kubeClient.GetImages(); 
+        }
+        
+        private static void RunScannerAndUpload(GlobalOptions options)
+        {
             // calculate max degree of parallelism and create the parallel options object
             var mdop = CalculateMaxDegreeOfParallelism(options.MaxParallelismPercentage);
             var opt = new ParallelOptions {MaxDegreeOfParallelism = mdop};
             
             // write start messages
-            LogHelper.LogMessages("Kube-Scanner is running on parallelization degree", options.MaxParallelismPercentage);
+            LogHelper.LogMessages(
+                "kube-scanner is running on parallelization degree %", 
+                options.MaxParallelismPercentage
+            );
             LogHelper.LogMessages("The number of logical CPU is", Environment.ProcessorCount);
             LogHelper.LogMessages("The number of CPU being used is", mdop);
             
             // scan the images in parallel and save results into the exporter
-            Parallel.ForEach(images, opt, (image) =>
+            Parallel.ForEach(_images, opt, (image) =>
             {
                 LogHelper.LogMessages("Scanning image", image);
                 
-                var task = Task.Run(async () => await scanner.Scan(image));
+                var task = Task.Run(async () => await _scanner.Scan(image));
                 var result = task.Result;
                 if (options.IsBulkUpload)
-                    scanResults.Add(result);
+                    ScanResults.Add(result);
                 else
-                    exporter.Upload(result);
+                    _exporter.Upload(result);
             });
-
+            
             // if bulk upload is selected
             if (options.IsBulkUpload)
             {
-                exporter.UploadBulk(scanResults);
+                _exporter.UploadBulk(ScanResults);
             }
-            
-            // write finish message
-            LogHelper.LogMessages("Kube-Scanner finished execution");
-
         }
 
         private static int CalculateMaxDegreeOfParallelism(int maxParallelismPercent)
