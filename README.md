@@ -5,8 +5,8 @@ kube-scanner is a command-line tool that helps you scan all images in a Kubernet
 Scanning all cluster images is as easy as, running the following command:
 
 ```bash
-    docker run -v $HOME:/root -v /var/run/docker.sock:/var/run/docker.sock \
-    deepnetwork/kube-scanner trivy -e File
+docker run -v $HOME:/root -v /var/run/docker.sock:/var/run/docker.sock \
+deepnetwork/kube-scanner trivy -e File
 ```
 
 Basically, it retrieves all unique images from the Kubernetes cluster, scans them with the selected scanner and saves the results into the selected exporter.
@@ -23,13 +23,13 @@ scanners and exporters in future versions.
 
 1. Select a scanner:
     ```bash
-      trivy      Run trivy scanner
+    trivy      Run trivy scanner
     
-      clair      Run clair scanner // not supported yet
+    clair      Run clair scanner // not supported yet
     
-      help       Display more information on a specific command.
+    help       Display more information on a specific command.
     
-      version    Display version information.
+    version    Display version information.
     
     ```
 
@@ -37,27 +37,27 @@ scanners and exporters in future versions.
 
 2. Trivy options:
     ```bash
-      -a, --trivyCachePath               Folder path of Trivy cache files
+    -a, --trivyCachePath               Folder path of Trivy cache files
     
-      -c, --containerRegistryAddress     Container Registry Address
+    -c, --containerRegistryAddress     Container Registry Address
     
-      -u, --containerRegistryUserName    Container Registry User Name
+    -u, --containerRegistryUserName    Container Registry User Name
     
-      -p, --containerRegistryPassword    Container Registry User Password
+    -p, --containerRegistryPassword    Container Registry User Password
     
-      -k, --kubeConfigPath               File path of Kube Config file
+    -k, --kubeConfigPath               File path of Kube Config file
     
-      -e, --exporter                     Required. Exporter type (e.g, File)
+    -e, --exporter                     Required. Exporter type (e.g, File)
     
-      -f, --fileExporterPath             Folder path of file exporter
+    -f, --fileExporterPath             Folder path of file exporter
     
-      -b, --isBulkUpload                 (Default: false) Is bulk upload
+    -b, --isBulkUpload                 (Default: false) Is bulk upload
     
-      -m, --maxParallelismPercentage     (Default: 10) Maximum Degree of Parallelism in Percentage
+    -m, --maxParallelismPercentage     (Default: 10) Maximum Degree of Parallelism in Percentage
     
-      --help                             Display this help screen.
+    --help                             Display this help screen.
     
-      --version                          Display version information.
+    --version                          Display version information.
     ```
 
 # Getting Started
