@@ -9,6 +9,7 @@ namespace kube_scanner.scanners
 {
     public class Trivy : IScanner
     {
+        private const string TrivyCacheDirectory = "/root/.cache/";
         private const string TrivyImage = "aquasec/trivy:0.1.7";
         private readonly string _cachePath;
 
@@ -37,22 +38,27 @@ namespace kube_scanner.scanners
             // commands that will be executed by trivy container
             var cmd = new[]
             {
-                "-c",
+                "--skip-update",
+                "--cache-dir", TrivyCacheDirectory,
                 "-f", "json",
                 "-o", scanResultFile,
                 imageToBeScanned
             };
 
-            // set the volumes will be mounted to trivy container
+            // set the bind to be mounted to trivy container
             var hostConfig = new HostConfig
             {
-                Binds = new List<string>
+                Mounts = new List<Mount>
                 {
-                    _cachePath  + ":/root/.cache/"
-                }
+                    new Mount
+                    {
+                        Source = _cachePath,
+                        Target = TrivyCacheDirectory,
+                        Type = "bind"
+                    }
+                },
             };
-            
-            
+
             // If the provided private Container Registry (CR) name is equal to CR of image to be scanned,
             // add private CR credentials to the trivy container as env vars
             var env = new List<string>();
