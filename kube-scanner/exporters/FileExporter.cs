@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using kube_scanner.core;
+using kube_scanner.helpers;
 
 namespace kube_scanner.exporters
 {
@@ -24,12 +25,17 @@ namespace kube_scanner.exporters
         public void Upload(ScanResult result)
         {
             // write JSON directly to a file
-            var img = result.ImageName.Replace('/', '_');
-            
-            File.WriteAllText(@_folderPath+"/"+img+".json", result.ScanResultArray.ToString());
-            
+            var img = result
+                .ImageName
+                .Replace('/', '_')
+                .Replace(':', '_');
+
+            var resultPath = Path.Combine(_folderPath, $"{img}.json");
+            File.WriteAllText(resultPath, result.ScanResultArray.ToString());
+
             // write logs
-            File.WriteAllText(@_folderPath+"/"+img+".log", result.Logs);
+            var logPath = Path.Combine(_folderPath, $"{img}.log");
+            File.WriteAllText(logPath, result.Logs);
         }
 
         public void UploadBulk(IEnumerable<ScanResult> results)
@@ -37,12 +43,17 @@ namespace kube_scanner.exporters
             foreach (var r in results)
             {
                 // write JSON directly to a file
-                var img = r.ImageName.Replace('/', '_');
-            
-                File.WriteAllText(@_folderPath+"/"+img+".json", r.ScanResultArray.ToString());
-                
+                var img = r
+                    .ImageName
+                    .Replace('/', '_')
+                    .Replace(':', '_');
+
+                var resultPath = Path.Combine(_folderPath, $"{img}.json");
+                File.WriteAllText(resultPath, r.ScanResultArray.ToString());
+
                 // write logs
-                File.WriteAllText(@_folderPath+"/"+img+".log", r.Logs);
+                var logPath = Path.Combine(_folderPath, $"{img}.log");
+                File.WriteAllText(logPath, r.Logs);
             }
         }
     }
