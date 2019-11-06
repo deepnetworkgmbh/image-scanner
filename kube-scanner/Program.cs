@@ -92,16 +92,27 @@ namespace kube_scanner
             var opt = new ParallelOptions { MaxDegreeOfParallelism = options.ParallelismDegree };
 
             // scan the images in parallel and save results into the exporter
-            Parallel.ForEach(_images, opt, (image) =>
+            Parallel.ForEach(_images, opt, image =>
             {
-                LogHelper.LogMessages("Scanning image", image);
-                
-                var task = Task.Run(async () => await _scanner.Scan(image));
-                var result = task.Result;
-                if (options.IsBulkUpload)
-                    ScanResults.Add(result);
-                else
-                    _exporter.Upload(result);
+                try
+                {
+                    LogHelper.LogMessages("Scanning image", image);
+
+                    var task = Task.Run(async () => await _scanner.Scan(image));
+                    var result = task.Result;
+
+                    if (options.IsBulkUpload)
+                        ScanResults.Add(result);
+                    else
+                        _exporter.Upload(result);
+                }
+                catch (AggregateException ex)
+                {
+                    foreach (var innerException in ex.InnerExceptions)
+                    {
+                        LogHelper.LogErrorsAndContinue($"Failed to scan image {image} due {innerException.GetType()} exception{Environment.NewLine}{innerException.Message}");
+                    }
+                }
             });
             
             // if bulk upload is selected
