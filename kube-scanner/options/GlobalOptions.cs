@@ -20,8 +20,7 @@ namespace kube_scanner.options
             HelpText = "Is bulk upload")]
         public bool IsBulkUpload { get; set; }
         
-        [Option('m', "maxParallelismPercentage", Required = false, Default = 10, 
-            HelpText = "Maximum Degree of Parallelism in Percentage")]
-        public int MaxParallelismPercentage { get; set; }
+        [Option('m', "parallelismDegree", Required = false, Default = 10, HelpText = "Degree of Parallelism")]
+        public int ParallelismDegree { get; set; }
     }
 }

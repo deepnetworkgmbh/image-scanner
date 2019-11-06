@@ -89,18 +89,8 @@ namespace kube_scanner
         
         private static void RunScannerAndUpload(GlobalOptions options)
         {
-            // calculate max degree of parallelism and create the parallel options object
-            var mdop = CalculateMaxDegreeOfParallelism(options.MaxParallelismPercentage);
-            var opt = new ParallelOptions {MaxDegreeOfParallelism = mdop};
-            
-            // write start messages
-            LogHelper.LogMessages(
-                "kube-scanner is running on parallelization degree %", 
-                options.MaxParallelismPercentage
-            );
-            LogHelper.LogMessages("The number of logical CPU is", Environment.ProcessorCount);
-            LogHelper.LogMessages("The number of CPU being used is", mdop);
-            
+            var opt = new ParallelOptions { MaxDegreeOfParallelism = options.ParallelismDegree };
+
             // scan the images in parallel and save results into the exporter
             Parallel.ForEach(_images, opt, (image) =>
             {
@@ -119,26 +109,6 @@ namespace kube_scanner
             {
                 _exporter.UploadBulk(ScanResults);
             }
-        }
-
-        private static int CalculateMaxDegreeOfParallelism(int maxParallelismPercent)
-        {
-            var pc = Environment.ProcessorCount;
-
-            if (pc == 0) return -1; // there is no limit on the number of concurrently running operations
-            
-            if ((maxParallelismPercent > 100) || (maxParallelismPercent < 1))
-            {
-                LogHelper.LogErrorsAndExit(
-                    "Parallelism percent should be between 1-100. You typed",
-                    maxParallelismPercent
-                );
-            }
-            
-            var floatDegree = (float) (pc * maxParallelismPercent) / 100;
-            var intDegree = (int) Math.Ceiling(floatDegree);
-
-            return intDegree;
         }
     }
 }
