@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using core.core;
 using core.helpers;
@@ -30,7 +31,7 @@ namespace core.scanners
 
         public string ContainerRegistryPassword { get; set; }
 
-        public async Task<ScanResult> Scan(string imageToBeScanned)
+        public async Task<ImageScanDetails> Scan(ContainerImage image)
         {
             // create docker helper
             var dockerHelper = new DockerContainer
@@ -51,7 +52,7 @@ namespace core.scanners
                 "--cache-dir", TrivyCacheDirectory,
                 "-f", "json",
                 "-o", scanResultFile,
-                imageToBeScanned,
+                image.FullName,
             };
 
             // set the bind to be mounted to trivy container
@@ -73,7 +74,7 @@ namespace core.scanners
             var env = new List<string>();
             if (!string.IsNullOrEmpty(this.ContainerRegistryAddress))
             {
-                var crNameOfImage = imageToBeScanned.Split('/')[0];
+                var crNameOfImage = image.ContainerRegistry;
                 var crNameOfParameter = this.ContainerRegistryAddress.Split('/')[0];
 
                 if (crNameOfParameter == crNameOfImage)
@@ -99,8 +100,8 @@ namespace core.scanners
             // start to scan the image
             await dockerHelper.StartContainer();
 
-            // get json array from container
-            var jsonArray = await dockerHelper.GetArchiveFromContainerAsync(scanResultFile);
+            // get scan result content
+            var content = await dockerHelper.GetFileContentFromContainerAsync(scanResultFile);
 
             // get logs from container
             var logs = await dockerHelper.GetContainerLogsAsync();
@@ -108,23 +109,29 @@ namespace core.scanners
             // remove the container
             await dockerHelper.DisposeAsync();
 
-            foreach (var log in logs.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+            var result = ImageScanDetails.New();
+            result.Image = image;
+            result.ScannerType = ScannerType.Trivy;
+
+            var fatalError = logs
+                .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault(e => e.Contains("FATAL"));
+
+            if (fatalError != null)
             {
-                if (!log.Contains("FATAL"))
-                {
-                    continue;
-                }
+                var logText = fatalError.Split("FATAL")[1];
+                Log.Error("{Image} {LogText}", image.FullName, logText);
 
-                var logText = log.Split("FATAL")[1];
-
-                // LogHelper.LogErrorsAndContinue(imageToBeScanned, logText);
-                Log.Error("{Image} {LogText}", imageToBeScanned, logText);
+                result.ScanResult = ScanResult.Failed;
+                result.Payload = logText;
+            }
+            else
+            {
+                result.ScanResult = ScanResult.Succeeded;
+                result.Payload = content;
             }
 
-            // create a scan result object
-            var trivyScanResult = new ScanResult { ImageName = imageToBeScanned, ScanResultArray = jsonArray, Logs = logs };
-
-            return trivyScanResult;
+            return result;
         }
     }
 }

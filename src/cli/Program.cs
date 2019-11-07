@@ -62,15 +62,15 @@ namespace cli
             core.MainClass.Main(scanner, exporter, imageList, trivyOptions.ParallelismDegree);
         }
 
-        private static async Task<IEnumerable<string>> RetrieveImagesFromKube(string kubeConfigPath)
+        private static async Task<IEnumerable<ContainerImage>> RetrieveImagesFromKube(string kubeConfigPath)
         {
             // create a Kubernetes client (factory pattern)
             var kubeClient = await KubeClient.CreateAsync(kubeConfigPath);
 
             // retrieve the unique list of images in the cluster
-            var images = kubeClient.GetImages();
+            var images = await kubeClient.GetImages();
 
-            return await images;
+            return images;
         }
 
         private static IExporter InitializeExporter(GlobalOptions options)

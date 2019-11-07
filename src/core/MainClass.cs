@@ -10,18 +10,18 @@ namespace core
 {
     public static class MainClass
     {
-        public static void Main(IScanner scanner, IExporter exporter, IEnumerable<string> images, int parallelismDegree)
+        public static void Main(IScanner scanner, IExporter exporter, IEnumerable<ContainerImage> images, int parallelismDegree)
         {
             try
             {
                 // create the pipeline of actions
-                var scannerBlock = new TransformBlock<string, ScanResult>(
-                    async i => { return await scanner.Scan(i); }, new ExecutionDataflowBlockOptions
+                var scannerBlock = new TransformBlock<ContainerImage, ImageScanDetails>(
+                    async i => await scanner.Scan(i), new ExecutionDataflowBlockOptions
                     {
                         MaxDegreeOfParallelism = parallelismDegree,
                     });
 
-                var exporterBlock = new ActionBlock<ScanResult>(
+                var exporterBlock = new ActionBlock<ImageScanDetails>(
                     c => { exporter.UploadAsync(c); }, new ExecutionDataflowBlockOptions
                     {
                         MaxDegreeOfParallelism = parallelismDegree,

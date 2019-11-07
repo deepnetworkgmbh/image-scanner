@@ -17,7 +17,10 @@ namespace core.exporters
             // if folder path is not provided, use default folder
             if (string.IsNullOrEmpty(folderPath))
             {
-                folderPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/.kube-scanner/exports";
+                folderPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                    ".kube-scanner",
+                    "exports");
             }
 
             if (!Directory.Exists(folderPath))
@@ -28,38 +31,34 @@ namespace core.exporters
             this.folderPath = folderPath;
         }
 
-        public async Task UploadAsync(ScanResult result)
+        public async Task UploadAsync(ImageScanDetails details)
         {
             // write JSON directly to a file
-            var img = result
-                .ImageName
+            var img = details
+                .Image
+                .FullName
                 .Replace('/', '_')
                 .Replace(':', '_');
 
             var resultPath = Path.Combine(this.folderPath, $"{img}.json");
-            await File.WriteAllTextAsync(resultPath, result.ScanResultArray.ToString());
-
-            // write logs
-            var logPath = Path.Combine(this.folderPath, $"{img}.log");
-            await File.WriteAllTextAsync(logPath, result.Logs);
+            var jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(details);
+            await File.WriteAllTextAsync(resultPath, jsonResult);
         }
 
-        public async Task UploadBulkAsync(IEnumerable<ScanResult> results)
+        public async Task UploadBulkAsync(IEnumerable<ImageScanDetails> results)
         {
-            foreach (var r in results)
+            foreach (var result in results)
             {
                 // write JSON directly to a file
-                var img = r
-                    .ImageName
+                var img = result
+                    .Image
+                    .FullName
                     .Replace('/', '_')
                     .Replace(':', '_');
 
                 var resultPath = Path.Combine(this.folderPath, $"{img}.json");
-                await File.WriteAllTextAsync(resultPath, r.ScanResultArray.ToString());
-
-                // write logs
-                var logPath = Path.Combine(this.folderPath, $"{img}.log");
-                await File.WriteAllTextAsync(logPath, r.Logs);
+                var jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(result);
+                await File.WriteAllTextAsync(resultPath, jsonResult);
             }
         }
     }

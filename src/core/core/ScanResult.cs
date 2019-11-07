@@ -1,17 +1,13 @@
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using System.Runtime.Serialization;
 
 namespace core.core
 {
-    public class ScanResult
+    public enum ScanResult
     {
-        [JsonProperty(PropertyName = "imageName")]
-        public string ImageName { get; set; }
+        [EnumMember(Value = "FAILED")]
+        Failed = 1,
 
-        [JsonProperty(PropertyName = "scanResultArray")]
-        public JArray ScanResultArray { get; set; }
-
-        [JsonProperty(PropertyName = "logs")]
-        public string Logs { get; set; }
+        [EnumMember(Value = "SUCCEEDED")]
+        Succeeded = 2,
     }
 }

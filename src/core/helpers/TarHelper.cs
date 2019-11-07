@@ -7,7 +7,7 @@ namespace core.helpers
 {
     public static class TarHelper
     {
-        public static JArray UnTarIntoJsonArray(Stream stream)
+        public static string UnTar(Stream stream)
         {
             var memoryStream = new MemoryStream();
 
@@ -29,14 +29,7 @@ namespace core.helpers
 
             var jsonString = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
 
-            if (string.IsNullOrEmpty(jsonString))
-            {
-                jsonString = "[]";
-            }
-
-            var jsonArray = JArray.Parse(jsonString);
-
-            return jsonArray;
+            return jsonString;
         }
     }
 }

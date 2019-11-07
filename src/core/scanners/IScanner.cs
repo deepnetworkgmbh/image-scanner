@@ -5,6 +5,6 @@ namespace core.scanners
 {
     public interface IScanner
     {
-        Task<ScanResult> Scan(string imageTag);
+        Task<ImageScanDetails> Scan(ContainerImage image);
     }
 }

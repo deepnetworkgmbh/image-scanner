@@ -26,10 +26,8 @@ namespace core.core
             return ret.InitializeAsync(kubeConfigStr);
         }
 
-        public async Task<IEnumerable<string>> GetImages()
+        public async Task<IEnumerable<ContainerImage>> GetImages()
         {
-            List<string> imageList = null;
-
             try
             {
                 // use the config object to create a client.
@@ -39,7 +37,10 @@ namespace core.core
                 var podList = await kubeClient.ListPodForAllNamespacesAsync();
 
                 // generate a unique list of images
-                imageList = (from pod in podList.Items from container in pod.Spec.Containers select container.Image).Distinct().ToList();
+                var imageList = (from pod in podList.Items from container in pod.Spec.Containers select container.Image)
+                    .Distinct()
+                    .Select(ContainerImage.FromFullName)
+                    .ToList();
 
                 return imageList;
             }
@@ -50,7 +51,7 @@ namespace core.core
                 Environment.Exit(1);
             }
 
-            return imageList;
+            return new List<ContainerImage>(0);
         }
 
         private async Task<KubeClient> InitializeAsync(string kubeConfigStr)

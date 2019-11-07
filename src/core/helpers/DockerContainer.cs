@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.Models;
+
 using Newtonsoft.Json.Linq;
 using Serilog;
 using Task = System.Threading.Tasks.Task;
@@ -114,9 +115,7 @@ namespace core.helpers
             };
 
             // read logs from stream and save into file
-            var logStream = await this.dockerClient.Containers.GetContainerLogsAsync(
-                this.containerId,
-                parameters);
+            var logStream = await this.dockerClient.Containers.GetContainerLogsAsync(this.containerId, parameters);
 
             if (logStream == null)
             {
@@ -124,30 +123,26 @@ namespace core.helpers
             }
 
             // convert log stream to string
+            // TODO: maybe get rid of unprintable characters at the beginning of each line, \u0001 and \u001b?
             using var reader = new StreamReader(logStream, Encoding.UTF8);
-            var log = reader.ReadToEnd();
+            var log = reader.ReadToEnd().Replace("\0", string.Empty);
 
-            return log;
+            return System.Text.RegularExpressions.Regex.Unescape(log);
         }
 
-        public async Task<JArray> GetArchiveFromContainerAsync(string filePath)
+        public async Task<string> GetFileContentFromContainerAsync(string filePath)
         {
-            if (this.containerId == null)
-            {
-                return new JArray(); // return an empty json array if container not exists
-            }
-
-            // wait until the container finishes running
-            await this.dockerClient.Containers.WaitContainerAsync(this.containerId);
-
-            var parameters = new GetArchiveFromContainerParameters
-            {
-                Path = filePath,
-            };
-
-            JArray jsonArray;
+            var empty = "{}";
             try
             {
+                // wait until the container finishes running
+                await this.dockerClient.Containers.WaitContainerAsync(this.containerId);
+
+                var parameters = new GetArchiveFromContainerParameters
+                {
+                    Path = filePath,
+                };
+
                 var response = await this.dockerClient.Containers.GetArchiveFromContainerAsync(
                     this.containerId,
                     parameters,
@@ -157,19 +152,25 @@ namespace core.helpers
 
                 if (archiveStream == null)
                 {
-                    return new JArray(); // return an empty json array if stream is null
+                    return empty; // return an empty object if stream is null
                 }
 
                 // convert archive stream to JArray object
-                jsonArray = TarHelper.UnTarIntoJsonArray(archiveStream);
+                var trivyScanResultJson = TarHelper.UnTar(archiveStream);
+
+                if (!string.IsNullOrEmpty(trivyScanResultJson))
+                {
+                    // hack to normalize content
+                    return JArray.Parse(trivyScanResultJson).ToString();
+                }
             }
             catch (DockerContainerNotFoundException e)
             {
-                jsonArray = new JArray();
                 Log.Error("Error scanning image {Image} Docker API responded with status code=NotFound {Message}", this.Cmd.Last(), e.Message);
             }
 
-            return jsonArray;
+            // returns an empty object if container does not exists or there is no scan result in it.
+            return empty;
         }
 
         public async Task DisposeAsync()
