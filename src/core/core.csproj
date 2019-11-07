@@ -4,11 +4,24 @@
         <TargetFramework>netcoreapp3.0</TargetFramework>
     </PropertyGroup>
 
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+      <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+      <WarningsAsErrors />
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Include="..\GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
+    </ItemGroup>
+
     <ItemGroup>
       <PackageReference Include="Docker.DotNet" Version="3.125.2" />
       <PackageReference Include="KubernetesClient" Version="1.6.3" />
       <PackageReference Include="Newtonsoft.Json" Version="9.0.2-beta1" />
       <PackageReference Include="sharpcompress" Version="0.24.0" />
+      <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
     </ItemGroup>
 
 </Project>
