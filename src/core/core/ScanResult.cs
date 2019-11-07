@@ -7,11 +7,10 @@ namespace core.core
     {
         [JsonProperty(PropertyName = "imageName")]
         public string ImageName { get; set; }
-        
-        
+
         [JsonProperty(PropertyName = "scanResultArray")]
         public JArray ScanResultArray { get; set; }
-        
+
         [JsonProperty(PropertyName = "logs")]
         public string Logs { get; set; }
     }

@@ -8,19 +8,23 @@ namespace core.exporters
     public class FileExporter : IExporter
     {
         private readonly string _folderPath;
-        
+
         public bool IsBulkUpload { get; set; }
 
         public FileExporter(string folderPath)
         {
             // if folder path is not provided, use default folder
             if (string.IsNullOrEmpty(folderPath))
-                folderPath = (Environment.GetFolderPath(Environment.SpecialFolder.Personal)+"/.kube-scanner/exports");
-            
+            {
+                folderPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/.kube-scanner/exports";
+            }
+
             if (!Directory.Exists(folderPath))
+            {
                 Directory.CreateDirectory(folderPath);
-            
-            _folderPath = folderPath;
+            }
+
+            this._folderPath = folderPath;
         }
 
         public void Upload(ScanResult result)
@@ -31,11 +35,11 @@ namespace core.exporters
                 .Replace('/', '_')
                 .Replace(':', '_');
 
-            var resultPath = Path.Combine(_folderPath, $"{img}.json");
+            var resultPath = Path.Combine(this._folderPath, $"{img}.json");
             File.WriteAllText(resultPath, result.ScanResultArray.ToString());
 
             // write logs
-            var logPath = Path.Combine(_folderPath, $"{img}.log");
+            var logPath = Path.Combine(this._folderPath, $"{img}.log");
             File.WriteAllText(logPath, result.Logs);
         }
 
@@ -49,11 +53,11 @@ namespace core.exporters
                     .Replace('/', '_')
                     .Replace(':', '_');
 
-                var resultPath = Path.Combine(_folderPath, $"{img}.json");
+                var resultPath = Path.Combine(this._folderPath, $"{img}.json");
                 File.WriteAllText(resultPath, r.ScanResultArray.ToString());
 
                 // write logs
-                var logPath = Path.Combine(_folderPath, $"{img}.log");
+                var logPath = Path.Combine(this._folderPath, $"{img}.log");
                 File.WriteAllText(logPath, r.Logs);
             }
         }

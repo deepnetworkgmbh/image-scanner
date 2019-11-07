@@ -9,6 +9,15 @@
       <WarningsAsErrors />
     </PropertyGroup>
 
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DocumentationFile></DocumentationFile>
+        <CodeAnalysisRuleSet>core.ruleset</CodeAnalysisRuleSet>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <CodeAnalysisRuleSet>core.ruleset</CodeAnalysisRuleSet>
+    </PropertyGroup>
+    
     <ItemGroup>
       <Compile Include="..\GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
     </ItemGroup>

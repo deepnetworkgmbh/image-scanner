@@ -10,26 +10,32 @@ namespace core.helpers
         public static JArray UnTarIntoJsonArray(Stream stream)
         {
             var memoryStream = new MemoryStream();
-            
+
             using (var reader = ReaderFactory.Open(stream))
             {
                 while (reader.MoveToNextEntry())
                 {
-                    if (reader.Entry.IsDirectory) continue;
+                    if (reader.Entry.IsDirectory)
+                    {
+                        continue;
+                    }
+
                     using var entryStream = reader.OpenEntryStream();
                     entryStream.CopyTo(memoryStream);
                 }
             }
-                   
+
             var buffer = memoryStream.GetBuffer();
-            
+
             var jsonString = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
 
-            if (string.IsNullOrEmpty(jsonString)) 
+            if (string.IsNullOrEmpty(jsonString))
+            {
                 jsonString = "[]";
-            
-            var jsonArray = JArray.Parse(jsonString); 
-            
+            }
+
+            var jsonArray = JArray.Parse(jsonString);
+
             return jsonArray;
         }
     }

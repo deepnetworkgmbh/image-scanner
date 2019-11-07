@@ -18,7 +18,7 @@ namespace core.core
             try
             {
                 // check if kube config is accessible
-                _kubeConfig = BuildConfigFromConfigFile(kubeConfig);
+                this._kubeConfig = BuildConfigFromConfigFile(kubeConfig);
             }
             catch (KubeConfigException e)
             {
@@ -33,18 +33,18 @@ namespace core.core
         public IEnumerable<string> GetImages()
         {
             List<string> imageList = null;
-            
+
             try
             {
                 // use the config object to create a client.
-                var kubeClient = new Kubernetes(_kubeConfig);
+                var kubeClient = new Kubernetes(this._kubeConfig);
 
                 // get the pod list
                 var podList = kubeClient.ListPodForAllNamespaces();
-            
+
                 // generate a unique list of images
                 imageList = (from pod in podList.Items from container in pod.Spec.Containers select container.Image).Distinct().ToList();
-                
+
                 return imageList;
             }
             catch (HttpRequestException e)

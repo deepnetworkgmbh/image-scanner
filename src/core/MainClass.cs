@@ -1,21 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using core.core;
 using core.exporters;
 using core.helpers;
 using core.scanners;
-using core.core;
 
 namespace core
 {
     public static class MainClass
     {
         private static readonly List<ScanResult>
-            ScanResults = new List<ScanResult>(); // list of scan results      
+            ScanResults = new List<ScanResult>(); // list of scan results
 
         public static void Main(IScanner scanner, IExporter exporter, IEnumerable<string> images, int parallelismDegree)
         {
-            var opt = new ParallelOptions {MaxDegreeOfParallelism = parallelismDegree};
+            var opt = new ParallelOptions { MaxDegreeOfParallelism = parallelismDegree };
 
             // scan the images in parallel and save results into the exporter
             Parallel.ForEach(images, opt, image =>
@@ -28,9 +28,13 @@ namespace core
                     var result = task.Result;
 
                     if (exporter.IsBulkUpload)
+                    {
                         ScanResults.Add(result);
+                    }
                     else
+                    {
                         exporter.Upload(result);
+                    }
                 }
                 catch (AggregateException ex)
                 {
@@ -47,7 +51,7 @@ namespace core
             {
                 exporter.UploadBulk(ScanResults);
             }
-            
+
             // write finish message
             LogHelper.LogMessages("kube-scanner finished execution");
         }
