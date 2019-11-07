@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using core.core;
+using core.helpers;
 using Docker.DotNet.Models;
-using kube_scanner.core;
-using kube_scanner.helpers;
 
-namespace kube_scanner.scanners
+namespace core.scanners
 {
     public class Trivy : IScanner
     {

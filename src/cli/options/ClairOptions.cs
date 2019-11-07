@@ -1,6 +1,6 @@
 using CommandLine;
 
-namespace kube_scanner.options
+namespace cli.options
 {
     [Verb("clair", HelpText = "Run clair scanner")]
     public class ClairOptions : GlobalOptions {

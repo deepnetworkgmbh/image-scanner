@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
-using kube_scanner.core;
+using core.core;
 
-namespace kube_scanner.scanners
+namespace core.scanners
 {
     public interface IScanner
     {

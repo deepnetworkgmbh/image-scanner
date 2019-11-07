@@ -1,6 +1,6 @@
 using CommandLine;
 
-namespace kube_scanner.options
+namespace cli.options
 {
     public abstract class GlobalOptions
     {

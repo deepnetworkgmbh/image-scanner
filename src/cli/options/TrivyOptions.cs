@@ -1,6 +1,6 @@
 using CommandLine;
 
-namespace kube_scanner.options
+namespace cli.options
 {
     [Verb("trivy", HelpText = "Run trivy scanner")]
     public class TrivyOptions : GlobalOptions {

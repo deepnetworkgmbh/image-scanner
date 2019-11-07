@@ -3,7 +3,7 @@ using System.Text;
 using Newtonsoft.Json.Linq;
 using SharpCompress.Readers;
 
-namespace kube_scanner.helpers
+namespace core.helpers
 {
     public static class TarHelper
     {

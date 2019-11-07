@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace kube_scanner.core
+namespace core.core
 {
     public class ScanResult
     {

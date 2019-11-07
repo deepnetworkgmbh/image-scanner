@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace kube_scanner.helpers
+namespace core.helpers
 {
     public static class LogHelper
     {

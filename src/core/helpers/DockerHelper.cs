@@ -10,7 +10,7 @@ using Docker.DotNet.Models;
 using Newtonsoft.Json.Linq;
 using Task = System.Threading.Tasks.Task;
 
-namespace kube_scanner.helpers
+namespace core.helpers
 {
     public class DockerHelper
     {

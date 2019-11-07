@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using kube_scanner.core;
-using kube_scanner.helpers;
+using core.core;
 
-namespace kube_scanner.exporters
+namespace core.exporters
 {
     public class FileExporter : IExporter
     {
         private readonly string _folderPath;
+        
+        public bool IsBulkUpload { get; set; }
 
         public FileExporter(string folderPath)
         {

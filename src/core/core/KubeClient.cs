@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using core.helpers;
 using k8s;
 using k8s.Exceptions;
-using kube_scanner.helpers;
 using static k8s.KubernetesClientConfiguration;
 
-namespace kube_scanner.core
+namespace core.core
 {
     public class KubeClient
     {
