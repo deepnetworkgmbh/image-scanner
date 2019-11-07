@@ -11,7 +11,7 @@ namespace core.scanners
     {
         private const string TrivyCacheDirectory = "/root/.cache/";
         private const string TrivyImage = "aquasec/trivy:0.1.7";
-        private readonly string _cachePath;
+        private readonly string cachePath;
 
         public Trivy(string cachePath)
         {
@@ -20,7 +20,7 @@ namespace core.scanners
                 cachePath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/.kube-scanner/.trivycache";
             }
 
-            this._cachePath = cachePath;
+            this.cachePath = cachePath;
         }
 
         public string ContainerRegistryAddress { get; set; }
@@ -54,7 +54,7 @@ namespace core.scanners
                 {
                     new Mount
                     {
-                        Source = this._cachePath,
+                        Source = this.cachePath,
                         Target = TrivyCacheDirectory,
                         Type = "bind",
                     },

@@ -7,7 +7,7 @@ namespace core.exporters
 {
     public class FileExporter : IExporter
     {
-        private readonly string _folderPath;
+        private readonly string folderPath;
 
         public bool IsBulkUpload { get; set; }
 
@@ -24,7 +24,7 @@ namespace core.exporters
                 Directory.CreateDirectory(folderPath);
             }
 
-            this._folderPath = folderPath;
+            this.folderPath = folderPath;
         }
 
         public void Upload(ScanResult result)
@@ -35,11 +35,11 @@ namespace core.exporters
                 .Replace('/', '_')
                 .Replace(':', '_');
 
-            var resultPath = Path.Combine(this._folderPath, $"{img}.json");
+            var resultPath = Path.Combine(this.folderPath, $"{img}.json");
             File.WriteAllText(resultPath, result.ScanResultArray.ToString());
 
             // write logs
-            var logPath = Path.Combine(this._folderPath, $"{img}.log");
+            var logPath = Path.Combine(this.folderPath, $"{img}.log");
             File.WriteAllText(logPath, result.Logs);
         }
 
@@ -53,11 +53,11 @@ namespace core.exporters
                     .Replace('/', '_')
                     .Replace(':', '_');
 
-                var resultPath = Path.Combine(this._folderPath, $"{img}.json");
+                var resultPath = Path.Combine(this.folderPath, $"{img}.json");
                 File.WriteAllText(resultPath, r.ScanResultArray.ToString());
 
                 // write logs
-                var logPath = Path.Combine(this._folderPath, $"{img}.log");
+                var logPath = Path.Combine(this.folderPath, $"{img}.log");
                 File.WriteAllText(logPath, r.Logs);
             }
         }

@@ -14,26 +14,26 @@ namespace core.helpers
 {
     public class DockerHelper
     {
-        private readonly DockerClient _dockerClient;
+        private readonly DockerClient dockerClient;
 
-        private readonly string _containerImageUri;
-        private readonly string _containerName;
-        private readonly IList<string> _cmd;
-        private readonly HostConfig _hostConfig;
-        private readonly IList<string> _env;
+        private readonly string containerImageUri;
+        private readonly string containerName;
+        private readonly IList<string> cmd;
+        private readonly HostConfig hostConfig;
+        private readonly IList<string> env;
 
-        private string _containerId;
+        private string containerId;
 
         public DockerHelper(string containerImage, string containerName, IList<string> cmd, HostConfig hostConfig, IList<string> env)
         {
-            this._containerImageUri = containerImage;
-            this._containerName = containerName;
-            this._cmd = cmd;
-            this._hostConfig = hostConfig;
-            this._env = env;
+            this.containerImageUri = containerImage;
+            this.containerName = containerName;
+            this.cmd = cmd;
+            this.hostConfig = hostConfig;
+            this.env = env;
 
             // create the docker client
-            this._dockerClient = new DockerClientConfiguration(new Uri(DockerApiUri())).CreateClient();
+            this.dockerClient = new DockerClientConfiguration(new Uri(DockerApiUri())).CreateClient();
 
             // pull the container image
             this.PullImage(containerImage);
@@ -54,56 +54,31 @@ namespace core.helpers
         public async Task StartContainer()
         {
             // create the container
-            var response = await this._dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
+            var response = await this.dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
             {
-                Image = this._containerImageUri,
-                Name = this._containerName,
-                Env = this._env,
-                Cmd = this._cmd,
-                HostConfig = this._hostConfig,
+                Image = this.containerImageUri,
+                Name = this.containerName,
+                Env = this.env,
+                Cmd = this.cmd,
+                HostConfig = this.hostConfig,
             });
 
             // get the container id
-            this._containerId = response.ID;
+            this.containerId = response.ID;
 
             // start the container
-            await this._dockerClient.Containers.StartContainerAsync(this._containerId, new ContainerStartParameters());
-        }
-
-        public async Task WriteContainerLogsAsync(string logFile)
-        {
-            if (this._containerId != null)
-            {
-                // wait until the container finishes running
-                await this._dockerClient.Containers.WaitContainerAsync(this._containerId);
-
-                // create parameters for reading logs
-                var parameters = new ContainerLogsParameters
-                {
-                    ShowStdout = true,
-                    ShowStderr = true,
-                };
-
-                // read logs from stream and save into file
-                var logStream = await this._dockerClient.Containers.GetContainerLogsAsync(this._containerId, parameters);
-                if (logStream != null)
-                {
-                    using var reader = new StreamReader(logStream, Encoding.UTF8);
-                    var log = reader.ReadToEnd();
-                    File.AppendAllText(logFile, log);
-                }
-            }
+            await this.dockerClient.Containers.StartContainerAsync(this.containerId, new ContainerStartParameters());
         }
 
         public async Task<string> GetContainerLogsAsync()
         {
-            if (this._containerId == null)
+            if (this.containerId == null)
             {
                 return string.Empty; // return an empty string if container not exists
             }
 
             // wait until the container finishes running
-            await this._dockerClient.Containers.WaitContainerAsync(this._containerId);
+            await this.dockerClient.Containers.WaitContainerAsync(this.containerId);
 
             // create parameters for reading logs
             var parameters = new ContainerLogsParameters
@@ -113,8 +88,8 @@ namespace core.helpers
             };
 
             // read logs from stream and save into file
-            var logStream = await this._dockerClient.Containers.GetContainerLogsAsync(
-                this._containerId,
+            var logStream = await this.dockerClient.Containers.GetContainerLogsAsync(
+                this.containerId,
                 parameters);
 
             if (logStream == null)
@@ -131,13 +106,13 @@ namespace core.helpers
 
         public async Task<JArray> GetArchiveFromContainerAsync(string filePath)
         {
-            if (this._containerId == null)
+            if (this.containerId == null)
             {
                 return new JArray(); // return an empty json array if container not exists
             }
 
             // wait until the container finishes running
-            await this._dockerClient.Containers.WaitContainerAsync(this._containerId);
+            await this.dockerClient.Containers.WaitContainerAsync(this.containerId);
 
             var parameters = new GetArchiveFromContainerParameters
             {
@@ -147,8 +122,8 @@ namespace core.helpers
             JArray jsonArray;
             try
             {
-                var response = await this._dockerClient.Containers.GetArchiveFromContainerAsync(
-                    this._containerId,
+                var response = await this.dockerClient.Containers.GetArchiveFromContainerAsync(
+                    this.containerId,
                     parameters,
                     false);
 
@@ -165,7 +140,7 @@ namespace core.helpers
             catch (DockerContainerNotFoundException e)
             {
                 jsonArray = new JArray();
-                LogHelper.LogErrorsAndContinue("Error scanning image", this._cmd.Last(), "Docker API responded with status code=NotFound",  e.Message);
+                LogHelper.LogErrorsAndContinue("Error scanning image", this.cmd.Last(), "Docker API responded with status code=NotFound",  e.Message);
             }
 
             return jsonArray;
@@ -173,11 +148,11 @@ namespace core.helpers
 
         public async Task DisposeAsync()
         {
-            if (this._containerId != null)
+            if (this.containerId != null)
             {
                 // remove the container
-                await this._dockerClient.Containers.RemoveContainerAsync(
-                    this._containerId,
+                await this.dockerClient.Containers.RemoveContainerAsync(
+                    this.containerId,
                     new ContainerRemoveParameters());
             }
         }
@@ -212,7 +187,7 @@ namespace core.helpers
             try
             {
                 // pull the image
-                this._dockerClient.Images
+                this.dockerClient.Images
                     .CreateImageAsync(
                         new ImagesCreateParameters
                         {

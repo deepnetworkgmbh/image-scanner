@@ -11,14 +11,14 @@ namespace core.core
 {
     public class KubeClient
     {
-        private readonly KubernetesClientConfiguration _kubeConfig;
+        private readonly KubernetesClientConfiguration kubeConfig;
 
         public KubeClient(string kubeConfig)
         {
             try
             {
                 // check if kube config is accessible
-                this._kubeConfig = BuildConfigFromConfigFile(kubeConfig);
+                this.kubeConfig = BuildConfigFromConfigFile(kubeConfig);
             }
             catch (KubeConfigException e)
             {
@@ -37,7 +37,7 @@ namespace core.core
             try
             {
                 // use the config object to create a client.
-                var kubeClient = new Kubernetes(this._kubeConfig);
+                var kubeClient = new Kubernetes(this.kubeConfig);
 
                 // get the pod list
                 var podList = kubeClient.ListPodForAllNamespaces();
