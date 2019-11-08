@@ -1,13 +1,14 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using core.core;
 
 namespace core.exporters
 {
     public interface IExporter
     {
-        void Upload(ScanResult result);
+        Task UploadAsync(ScanResult result);
 
-        void UploadBulk(IEnumerable<ScanResult> results);
+        Task UploadBulkAsync(IEnumerable<ScanResult> results);
 
         bool IsBulkUpload { get; set; }
     }

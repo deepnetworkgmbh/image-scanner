@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using core.core;
 using core.exporters;
 using core.scanners;
@@ -10,51 +10,50 @@ namespace core
 {
     public static class MainClass
     {
-        private static readonly List<ScanResult>
-            ScanResults = new List<ScanResult>(); // list of scan results
-
         public static void Main(IScanner scanner, IExporter exporter, IEnumerable<string> images, int parallelismDegree)
         {
-            var opt = new ParallelOptions { MaxDegreeOfParallelism = parallelismDegree };
-
-            // scan the images in parallel and save results into the exporter
-            Parallel.ForEach(images, opt, image =>
+            try
             {
-                try
+                // create the pipeline of actions
+                var scannerBlock = new TransformBlock<string, ScanResult>(
+                    async i => { return await scanner.Scan(i); }, new ExecutionDataflowBlockOptions
+                    {
+                        MaxDegreeOfParallelism = parallelismDegree,
+                    });
+
+                var exporterBlock = new ActionBlock<ScanResult>(
+                    c => { exporter.UploadAsync(c); }, new ExecutionDataflowBlockOptions
+                    {
+                        MaxDegreeOfParallelism = parallelismDegree,
+                    });
+
+                // link the actions
+                scannerBlock.LinkTo(
+                    exporterBlock, new DataflowLinkOptions
+                    {
+                        PropagateCompletion = true,
+                    });
+
+                // scan images in parallel
+                foreach (var image in images)
                 {
                     Log.Information("Scanning image {Message}", image);
 
-                    var task = Task.Run(async () => await scanner.Scan(image));
-                    var result = task.Result;
-
-                    if (exporter.IsBulkUpload)
-                    {
-                        ScanResults.Add(result);
-                    }
-                    else
-                    {
-                        exporter.Upload(result);
-                    }
+                    scannerBlock.SendAsync(image);
                 }
-                catch (AggregateException ex)
-                {
-                    foreach (var innerException in ex.InnerExceptions)
-                    {
-                        var exType = innerException.GetType();
-                        var innerExMessage = innerException.Message;
-                        Log.Error(
-                            "Failed to scan image {Image} due {Message} exception {Exception}",
-                            image,
-                            exType,
-                            innerExMessage);
-                    }
-                }
-            });
 
-            // if bulk upload is selected
-            if (exporter.IsBulkUpload)
+                scannerBlock.Complete();
+                exporterBlock.Completion.Wait();
+            }
+            catch (AggregateException ex)
             {
-                exporter.UploadBulk(ScanResults);
+                foreach (var innerException in ex.InnerExceptions)
+                {
+                    var exType = innerException.GetType();
+                    var innerExMessage = innerException.Message;
+                    Log.Error(
+                        "Failed to scan image due {ExType} exception {InnerExMessage}", exType, innerExMessage);
+                }
             }
 
             // write finish message

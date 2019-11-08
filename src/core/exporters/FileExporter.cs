@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using core.core;
 
 namespace core.exporters
@@ -27,7 +28,7 @@ namespace core.exporters
             this.folderPath = folderPath;
         }
 
-        public void Upload(ScanResult result)
+        public async Task UploadAsync(ScanResult result)
         {
             // write JSON directly to a file
             var img = result
@@ -36,14 +37,14 @@ namespace core.exporters
                 .Replace(':', '_');
 
             var resultPath = Path.Combine(this.folderPath, $"{img}.json");
-            File.WriteAllText(resultPath, result.ScanResultArray.ToString());
+            await File.WriteAllTextAsync(resultPath, result.ScanResultArray.ToString());
 
             // write logs
             var logPath = Path.Combine(this.folderPath, $"{img}.log");
-            File.WriteAllText(logPath, result.Logs);
+            await File.WriteAllTextAsync(logPath, result.Logs);
         }
 
-        public void UploadBulk(IEnumerable<ScanResult> results)
+        public async Task UploadBulkAsync(IEnumerable<ScanResult> results)
         {
             foreach (var r in results)
             {
@@ -54,11 +55,11 @@ namespace core.exporters
                     .Replace(':', '_');
 
                 var resultPath = Path.Combine(this.folderPath, $"{img}.json");
-                File.WriteAllText(resultPath, r.ScanResultArray.ToString());
+                await File.WriteAllTextAsync(resultPath, r.ScanResultArray.ToString());
 
                 // write logs
                 var logPath = Path.Combine(this.folderPath, $"{img}.log");
-                File.WriteAllText(logPath, r.Logs);
+                await File.WriteAllTextAsync(logPath, r.Logs);
             }
         }
     }
