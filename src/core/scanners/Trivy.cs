@@ -31,8 +31,14 @@ namespace core.scanners
 
         public async Task<ScanResult> Scan(string imageToBeScanned)
         {
+            // create docker helper
+            var dockerHelper = new DockerContainer
+            {
+                ContainerImage = TrivyImage,
+            };
+
             // give a name to container
-            var containerName = DockerHelper.CreateRandomContainerName("trivy-container-", 8);
+            var containerName = DockerContainer.CreateRandomContainerName("trivy-container-", 8);
 
             // set the scan result file name
             var scanResultFile = "/" + containerName;
@@ -80,8 +86,14 @@ namespace core.scanners
                 }
             }
 
-            // create docker helper
-            var dockerHelper = new DockerHelper(TrivyImage, containerName, cmd, hostConfig, env);
+            // set docker container properties
+            dockerHelper.ContainerName = containerName;
+            dockerHelper.Cmd = cmd;
+            dockerHelper.HostConfig = hostConfig;
+            dockerHelper.Env = env;
+
+            // pull Trivy image
+            await dockerHelper.PullImage();
 
             // start to scan the image
             await dockerHelper.StartContainer();

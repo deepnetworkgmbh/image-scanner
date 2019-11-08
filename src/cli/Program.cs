@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using cli.options;
 using CommandLine;
 using core.core;
@@ -30,44 +31,40 @@ namespace cli
             }
         }
 
-        private static void RunClair(ClairOptions obj)
+        private static void RunClair(ClairOptions clairOptions)
         {
             throw new NotImplementedException();
         }
 
-        private static void RunTrivy(GlobalOptions globalOptions)
+        private static void RunTrivy(TrivyOptions trivyOptions)
         {
-            var options = globalOptions as TrivyOptions;
+            // create kube-client and get the list of unique images
+            var imageList = RetrieveImagesFromKube(trivyOptions.KubeConfigPath).Result;
 
-            // create kube client and get the list of unique images
-            var imageList = RetrieveImagesFromKube(options);
-
-            if (options == null)
+            // set private container registry credentials
+            var scanner = new Trivy(trivyOptions.TrivyCachePath)
             {
-                return;
-            }
-
-            var scanner = new Trivy(options.TrivyCachePath)
-            {
-                ContainerRegistryAddress = options.ContainerRegistryAddress,
-                ContainerRegistryUserName = options.ContainerRegistryUserName,
-                ContainerRegistryPassword = options.ContainerRegistryPassword,
+                ContainerRegistryAddress = trivyOptions.ContainerRegistryAddress,
+                ContainerRegistryUserName = trivyOptions.ContainerRegistryUserName,
+                ContainerRegistryPassword = trivyOptions.ContainerRegistryPassword,
             };
 
-            var exporter = InitializeExporter(options);
+            // create exporter object
+            var exporter = InitializeExporter(trivyOptions);
 
-            core.MainClass.Main(scanner, exporter, imageList, options.ParallelismDegree);
+            // run core project's main
+            core.MainClass.Main(scanner, exporter, imageList, trivyOptions.ParallelismDegree);
         }
 
-        private static IEnumerable<string> RetrieveImagesFromKube(GlobalOptions options)
+        private static async Task<IEnumerable<string>> RetrieveImagesFromKube(string kubeConfigPath)
         {
-            // create a Kubernetes client
-            var kubeClient = new KubeClient(options.KubeConfigPath);
+            // create a Kubernetes client (factory pattern)
+            var kubeClient = await KubeClient.CreateAsync(kubeConfigPath);
 
             // retrieve the unique list of images in the cluster
             var images = kubeClient.GetImages();
 
-            return images;
+            return await images;
         }
 
         private static IExporter InitializeExporter(GlobalOptions options)

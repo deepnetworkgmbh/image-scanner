@@ -12,31 +12,26 @@ using Task = System.Threading.Tasks.Task;
 
 namespace core.helpers
 {
-    public class DockerHelper
+    public class DockerContainer
     {
-        private readonly DockerClient dockerClient;
+        public IList<string> Env { get; set; }
 
-        private readonly string containerImageUri;
-        private readonly string containerName;
-        private readonly IList<string> cmd;
-        private readonly HostConfig hostConfig;
-        private readonly IList<string> env;
+        public HostConfig HostConfig { get; set; }
+
+        public IList<string> Cmd { get; set; }
+
+        public string ContainerName { get; set; }
+
+        public string ContainerImage { get; set; }
+
+        private readonly DockerClient dockerClient;
 
         private string containerId;
 
-        public DockerHelper(string containerImage, string containerName, IList<string> cmd, HostConfig hostConfig, IList<string> env)
+        public DockerContainer()
         {
-            this.containerImageUri = containerImage;
-            this.containerName = containerName;
-            this.cmd = cmd;
-            this.hostConfig = hostConfig;
-            this.env = env;
-
             // create the docker client
             this.dockerClient = new DockerClientConfiguration(new Uri(DockerApiUri())).CreateClient();
-
-            // pull the container image
-            this.PullImage(containerImage);
         }
 
         public static string CreateRandomContainerName(string prefix, int length)
@@ -51,16 +46,45 @@ namespace core.helpers
             return prefix + str;
         }
 
+        public async Task PullImage()
+        {
+            // split the image name into uri and tag
+            var imageStrings = this.ContainerImage.Split(':');
+            var imageUri = imageStrings[0];
+            var imageTag = imageStrings[1];
+
+            try
+            {
+                // pull the image
+                await this.dockerClient.Images
+                    .CreateImageAsync(
+                        new ImagesCreateParameters
+                        {
+                            FromImage = imageUri,
+                            Tag = imageTag,
+                        },
+                        new AuthConfig(),
+                        new Progress<JSONMessage>());
+            }
+            catch (AggregateException ae)
+            {
+                LogHelper.LogErrorsAndExit(
+                    "kube-scanner needs Docker to be installed beforehand.",
+                    "If you're running kube-scanner from Docker image, you need to mount /var/run/docker.sock.",
+                    ae.Message);
+            }
+        }
+
         public async Task StartContainer()
         {
             // create the container
             var response = await this.dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
             {
-                Image = this.containerImageUri,
-                Name = this.containerName,
-                Env = this.env,
-                Cmd = this.cmd,
-                HostConfig = this.hostConfig,
+                Image = this.ContainerImage,
+                Name = this.ContainerName,
+                Env = this.Env,
+                Cmd = this.Cmd,
+                HostConfig = this.HostConfig,
             });
 
             // get the container id
@@ -140,7 +164,7 @@ namespace core.helpers
             catch (DockerContainerNotFoundException e)
             {
                 jsonArray = new JArray();
-                LogHelper.LogErrorsAndContinue("Error scanning image", this.cmd.Last(), "Docker API responded with status code=NotFound",  e.Message);
+                LogHelper.LogErrorsAndContinue("Error scanning image", this.Cmd.Last(), "Docker API responded with status code=NotFound",  e.Message);
             }
 
             return jsonArray;
@@ -175,35 +199,6 @@ namespace core.helpers
 
             throw new Exception(
                 "Was unable to determine what OS this is running on, does not appear to be Windows or Linux!?");
-        }
-
-        private void PullImage(string image)
-        {
-            // split the image name into uri and tag
-            var imageStrings = image.Split(':');
-            var imageUri = imageStrings[0];
-            var imageTag = imageStrings[1];
-
-            try
-            {
-                // pull the image
-                this.dockerClient.Images
-                    .CreateImageAsync(
-                        new ImagesCreateParameters
-                        {
-                            FromImage = imageUri,
-                            Tag = imageTag,
-                        },
-                        new AuthConfig(),
-                        new Progress<JSONMessage>()).Wait();
-            }
-            catch (AggregateException ae)
-            {
-                LogHelper.LogErrorsAndExit(
-                    "kube-scanner needs Docker to be installed beforehand.",
-                    "If you're running kube-scanner from Docker image, you need to mount /var/run/docker.sock.",
-                    ae.Message);
-            }
         }
     }
 }
