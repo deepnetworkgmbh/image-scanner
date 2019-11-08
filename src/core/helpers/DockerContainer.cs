@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Newtonsoft.Json.Linq;
+using Serilog;
 using Task = System.Threading.Tasks.Task;
 
 namespace core.helpers
@@ -66,12 +67,13 @@ namespace core.helpers
                         new AuthConfig(),
                         new Progress<JSONMessage>());
             }
-            catch (AggregateException ae)
+            catch (System.Net.Http.HttpRequestException e)
             {
-                LogHelper.LogErrorsAndExit(
-                    "kube-scanner needs Docker to be installed beforehand.",
-                    "If you're running kube-scanner from Docker image, you need to mount /var/run/docker.sock.",
-                    ae.Message);
+                Log.Fatal(
+                    "kube-scanner needs Docker to be installed beforehand. " +
+                          "If you're running kube-scanner from Docker image, you need to mount /var/run/docker.sock. {Message}",
+                    e.Message);
+                Environment.Exit(1);
             }
         }
 
@@ -164,7 +166,7 @@ namespace core.helpers
             catch (DockerContainerNotFoundException e)
             {
                 jsonArray = new JArray();
-                LogHelper.LogErrorsAndContinue("Error scanning image", this.Cmd.Last(), "Docker API responded with status code=NotFound",  e.Message);
+                Log.Error("Error scanning image {Image} Docker API responded with status code=NotFound {Message}", this.Cmd.Last(), e.Message);
             }
 
             return jsonArray;
@@ -198,7 +200,7 @@ namespace core.helpers
             }
 
             throw new Exception(
-                "Was unable to determine what OS this is running on, does not appear to be Windows or Linux!?");
+            "Was unable to determine what OS this is running on, does not appear to be Windows or Linux!?");
         }
     }
 }

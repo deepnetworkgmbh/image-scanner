@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using core.core;
 using core.helpers;
 using Docker.DotNet.Models;
+using Serilog;
 
 namespace core.scanners
 {
@@ -115,7 +116,9 @@ namespace core.scanners
                 }
 
                 var logText = log.Split("FATAL")[1];
-                LogHelper.LogErrorsAndContinue(imageToBeScanned, logText);
+
+                // LogHelper.LogErrorsAndContinue(imageToBeScanned, logText);
+                Log.Error("{Image} {LogText}", imageToBeScanned, logText);
             }
 
             // create a scan result object

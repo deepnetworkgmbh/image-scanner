@@ -5,8 +5,8 @@ using cli.options;
 using CommandLine;
 using core.core;
 using core.exporters;
-using core.helpers;
 using core.scanners;
+using Serilog;
 using Parser = CommandLine.Parser;
 
 namespace cli
@@ -17,17 +17,23 @@ namespace cli
         {
             try
             {
+                Log.Logger = new LoggerConfiguration()
+                    .MinimumLevel.Information()
+                    .WriteTo.Console(outputTemplate:
+                        "[{Timestamp:HH:mm:ss} {Level}] {Message:lj}{NewLine}{Exception}")
+                    .CreateLogger();
+
                 Parser.Default.ParseArguments<TrivyOptions, ClairOptions>(args)
                     .WithParsed<TrivyOptions>(RunTrivy)
                     .WithParsed<ClairOptions>(RunClair);
             }
             catch (NotImplementedException e)
             {
-                LogHelper.LogErrorsAndExit(e.Message);
+                Log.Fatal("{Message}", e.Message);
             }
             catch (Exception e)
             {
-                LogHelper.LogErrorsAndExit("Something went wrong!", e.Message);
+                Log.Fatal("Something went wrong! {Message}", e.Message);
             }
         }
 
@@ -79,7 +85,7 @@ namespace cli
             }
             catch (Exception e)
             {
-                LogHelper.LogErrorsAndExit(e.Message);
+                Log.Fatal("{Message}", e.Message);
                 Environment.Exit(1);
             }
 

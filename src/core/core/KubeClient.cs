@@ -5,9 +5,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using core.helpers;
 using k8s;
 using k8s.Exceptions;
+using Serilog;
 using static k8s.KubernetesClientConfiguration;
 
 namespace core.core
@@ -46,7 +46,8 @@ namespace core.core
             catch (HttpRequestException e)
             {
                 // if kubernetes cluster is not accessible
-                LogHelper.LogErrorsAndExit(e.Message);
+                Log.Fatal("{Message}", e.Message);
+                Environment.Exit(1);
             }
 
             return imageList;
@@ -64,15 +65,18 @@ namespace core.core
             }
             catch (KubeConfigException e)
             {
-                LogHelper.LogErrorsAndExit(e.Message);
+                Log.Fatal("{Message}", e.Message);
+                Environment.Exit(1);
             }
             catch (Exception ex) when (ex.Source == "System.Security.Cryptography.X509Certificates")
             {
-                LogHelper.LogErrorsAndExit("KubeConfig OpenSsl Certificate Error", ex.Message);
+                Log.Fatal("KubeConfig OpenSsl Certificate Error {Message}", ex.Message);
+                Environment.Exit(1);
             }
             catch (Exception e)
             {
-                LogHelper.LogErrorsAndExit(e.Message);
+                Log.Fatal("{Message}", e.Message);
+                Environment.Exit(1);
             }
 
             return this;

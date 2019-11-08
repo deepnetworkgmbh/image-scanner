@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using core.core;
 using core.exporters;
-using core.helpers;
 using core.scanners;
+using Serilog;
 
 namespace core
 {
@@ -22,7 +22,7 @@ namespace core
             {
                 try
                 {
-                    LogHelper.LogMessages("Scanning image", image);
+                    Log.Information("Scanning image {Message}", image);
 
                     var task = Task.Run(async () => await scanner.Scan(image));
                     var result = task.Result;
@@ -40,8 +40,13 @@ namespace core
                 {
                     foreach (var innerException in ex.InnerExceptions)
                     {
-                        LogHelper.LogErrorsAndContinue(
-                            $"Failed to scan image {image} due {innerException.GetType()} exception{Environment.NewLine}{innerException.Message}");
+                        var exType = innerException.GetType();
+                        var innerExMessage = innerException.Message;
+                        Log.Error(
+                            "Failed to scan image {Image} due {Message} exception {Exception}",
+                            image,
+                            exType,
+                            innerExMessage);
                     }
                 }
             });
@@ -53,7 +58,7 @@ namespace core
             }
 
             // write finish message
-            LogHelper.LogMessages("kube-scanner finished execution");
+            Log.Information("kube-scanner finished execution");
         }
     }
 }
