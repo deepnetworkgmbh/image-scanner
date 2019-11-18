@@ -44,6 +44,9 @@ namespace cli
 
         private static void RunTrivy(TrivyOptions trivyOptions)
         {
+            // create exporter object
+            var exporter = InitializeExporter(trivyOptions);
+
             // create kube-client and get the list of unique images
             var imageList = RetrieveImagesFromKube(trivyOptions.KubeConfigPath).Result;
 
@@ -53,10 +56,8 @@ namespace cli
                 ContainerRegistryAddress = trivyOptions.ContainerRegistryAddress,
                 ContainerRegistryUserName = trivyOptions.ContainerRegistryUserName,
                 ContainerRegistryPassword = trivyOptions.ContainerRegistryPassword,
+                TrivyBinaryPath = trivyOptions.TrivyBinaryPath,
             };
-
-            // create exporter object
-            var exporter = InitializeExporter(trivyOptions);
 
             // run core project's main
             core.MainClass.Main(scanner, exporter, imageList, trivyOptions.ParallelismDegree);

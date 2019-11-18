@@ -1,25 +1,28 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using core.core;
 using core.helpers;
 using Docker.DotNet.Models;
+using Newtonsoft.Json.Linq;
+using RunProcessAsTask;
 using Serilog;
 
 namespace core.scanners
 {
     public class Trivy : IScanner
     {
-        private const string TrivyCacheDirectory = "/root/.cache/";
-        private const string TrivyImage = "aquasec/trivy:0.1.7";
         private readonly string cachePath;
 
         public Trivy(string cachePath)
         {
             if (string.IsNullOrEmpty(cachePath))
             {
-                cachePath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/.kube-scanner/.trivycache";
+                cachePath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) +
+                            "/.kube-scanner/.trivycache";
             }
 
             this.cachePath = cachePath;
@@ -31,83 +34,67 @@ namespace core.scanners
 
         public string ContainerRegistryPassword { get; set; }
 
+        public string TrivyBinaryPath { get; set; }
+
         public async Task<ImageScanDetails> Scan(ContainerImage image)
         {
-            // create docker helper
-            var dockerHelper = new DockerContainer
+            // create scan results folder in not already exists
+            var scanResultsFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                ".kube-scanner",
+                "trivy-scan-results");
+
+            if (!Directory.Exists(scanResultsFolder))
             {
-                ContainerImage = TrivyImage,
-            };
-
-            // give a name to container
-            var containerName = DockerContainer.CreateRandomContainerName("trivy-container-", 8);
-
-            // set the scan result file name
-            var scanResultFile = "/" + containerName;
-
-            // commands that will be executed by trivy container
-            var cmd = new[]
-            {
-                "--skip-update",
-                "--cache-dir", TrivyCacheDirectory,
-                "-f", "json",
-                "-o", scanResultFile,
-                image.FullName,
-            };
-
-            // set the bind to be mounted to trivy container
-            var hostConfig = new HostConfig
-            {
-                Mounts = new List<Mount>
-                {
-                    new Mount
-                    {
-                        Source = this.cachePath,
-                        Target = TrivyCacheDirectory,
-                        Type = "bind",
-                    },
-                },
-            };
-
-            // If the provided private Container Registry (CR) name is equal to CR of image to be scanned,
-            // add private CR credentials to the trivy container as env vars
-            var env = new List<string>();
-            if (!string.IsNullOrEmpty(this.ContainerRegistryAddress))
-            {
-                var crNameOfImage = image.ContainerRegistry;
-                var crNameOfParameter = this.ContainerRegistryAddress.Split('/')[0];
-
-                if (crNameOfParameter == crNameOfImage)
-                {
-                    env.AddRange(new[]
-                    {
-                        "TRIVY_AUTH_URL=" + this.ContainerRegistryAddress,
-                        "TRIVY_USERNAME=" + this.ContainerRegistryUserName,
-                        "TRIVY_PASSWORD=" + this.ContainerRegistryPassword,
-                    });
-                }
+                Directory.CreateDirectory(scanResultsFolder);
             }
 
-            // set docker container properties
-            dockerHelper.ContainerName = containerName;
-            dockerHelper.Cmd = cmd;
-            dockerHelper.HostConfig = hostConfig;
-            dockerHelper.Env = env;
+            // set the scan result file name
+            var scanResultFile = scanResultsFolder + CreateRandomFileName("/result-", 6);
 
-            // pull Trivy image
-            await dockerHelper.PullImage();
+            // commands that will be executed by trivy
+            var arguments =
+                $"--skip-update --cache-dir {this.cachePath} -f json -o {scanResultFile} {image.FullName}";
 
-            // start to scan the image
-            await dockerHelper.StartContainer();
+            // variables to hold logs and json content
+            var logs = string.Empty;
+            var content = string.Empty;
 
-            // get scan result content
-            var content = await dockerHelper.GetFileContentFromContainerAsync(scanResultFile);
+            try
+            {
+                var processStartInfo = new ProcessStartInfo
+                {
+                    FileName = this.TrivyBinaryPath,
+                    Arguments = arguments,
+                };
 
-            // get logs from container
-            var logs = await dockerHelper.GetContainerLogsAsync();
+                // If the provided private Container Registry (CR) name is equal to CR of image to be scanned,
+                // set private CR credentials as env vars to the process
+                if (!string.IsNullOrEmpty(this.ContainerRegistryAddress))
+                {
+                    var crNameOfImage = image.ContainerRegistry;
+                    var crNameOfParameter = this.ContainerRegistryAddress.Split('/')[0];
 
-            // remove the container
-            await dockerHelper.DisposeAsync();
+                    if (crNameOfParameter == crNameOfImage)
+                    {
+                        processStartInfo.EnvironmentVariables["TRIVY_AUTH_URL"] = this.ContainerRegistryAddress;
+                        processStartInfo.EnvironmentVariables["TRIVY_USERNAME"] = this.ContainerRegistryUserName;
+                        processStartInfo.EnvironmentVariables["TRIVY_PASSWORD"] = this.ContainerRegistryPassword;
+                    }
+                }
+
+                var logProcessResults = await ProcessEx.RunAsync(processStartInfo);
+
+                content = logProcessResults.ExitCode != 0
+                    ? "{}"
+                    : JArray.Parse(File.ReadAllText(@scanResultFile)).ToString();
+
+                logs = string.Join(Environment.NewLine, logProcessResults.StandardOutput);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("{Text} {Message}", "Error in Trivy process", ex.Message);
+            }
 
             var result = ImageScanDetails.New();
             result.Image = image;
@@ -132,6 +119,18 @@ namespace core.scanners
             }
 
             return result;
+        }
+
+        private static string CreateRandomFileName(string prefix, int length)
+        {
+            var random = new Random();
+
+            const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+            var str = new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+
+            return prefix + str;
         }
     }
 }

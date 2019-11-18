@@ -5,6 +5,9 @@ namespace cli.options
     [Verb("trivy", HelpText = "Run trivy scanner")]
     public class TrivyOptions : GlobalOptions
     {
+        [Option('t', "trivyBinaryPath", Required = false, HelpText = "Binary path of Trivy executable")]
+        public string TrivyBinaryPath { get; set; }
+
         [Option('a', "trivyCachePath", Required = false, HelpText = "Folder path of Trivy cache files")]
         public string TrivyCachePath { get; set; }
 
