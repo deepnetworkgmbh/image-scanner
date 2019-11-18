@@ -11,4 +11,6 @@ FROM mcr.microsoft.com/dotnet/core/runtime:3.0.0-alpine3.10 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
+COPY trivy /usr/local/bin/trivy
+
 ENTRYPOINT ["dotnet","cli.dll"]

@@ -5,8 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using core.core;
-using core.helpers;
-using Docker.DotNet.Models;
 using Newtonsoft.Json.Linq;
 using RunProcessAsTask;
 using Serilog;
@@ -38,7 +36,7 @@ namespace core.scanners
 
         public async Task<ImageScanDetails> Scan(ContainerImage image)
         {
-            // create scan results folder in not already exists
+            // create scan results folder if not already exists
             var scanResultsFolder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                 ".kube-scanner",
