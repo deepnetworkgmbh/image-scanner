@@ -7,7 +7,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <DocumentationFile>.\kube-scanner\src\webapp\webapp.xml</DocumentationFile>
+    <DocumentationFile>.\webapp.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
