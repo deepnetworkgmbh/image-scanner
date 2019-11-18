@@ -7,6 +7,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
+using webapp.Configuration;
 using webapp.Infrastructure;
 
 namespace webapp
@@ -41,6 +42,8 @@ namespace webapp
             services
                 .AddHealthChecks()
                 .AddCheck("Ready", () => HealthCheckResult.Healthy(), new[] { "liveness" });
+
+            services.AddSingleton<ConfigurationParser>();
 
             services.AddSwaggerGen(c =>
             {

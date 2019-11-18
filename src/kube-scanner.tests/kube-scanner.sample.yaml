@@ -1,0 +1,21 @@
+﻿parallelization: 10
+
+scanner:
+  !trivy-scanner
+  binaryPath: /usr/local/bin/trivy
+  cachePath: /root/.cache/
+  registries:
+    - address: https://registry.hub.docker.com
+      username:
+      password:
+    - address: myacr.azurecr.io
+      username: myacr
+      password: <MYACRPASSWD>
+
+exporter:
+  !file-exporter
+  path: ./scan-results/
+
+importer:
+  !file-importer
+  path: ./scan-results/
