@@ -1,16 +1,17 @@
 using System;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using core.core;
 using core.exporters;
+using core.images;
 using core.scanners;
 using Serilog;
 
 namespace core
 {
-    public static class MainClass
+    public static class KubeScanner
     {
-        public static void Main(IScanner scanner, IExporter exporter, IEnumerable<ContainerImage> images, int parallelismDegree)
+        public static async Task Scan(IScanner scanner, IExporter exporter, IImageProvider images, int parallelismDegree)
         {
             try
             {
@@ -35,25 +36,19 @@ namespace core
                     });
 
                 // scan images in parallel
-                foreach (var image in images)
+                foreach (var image in await images.GetImages())
                 {
-                    Log.Information("Scanning image {Message}", image);
+                    Log.Information("Scanning image {Image}", image.FullName);
 
-                    scannerBlock.SendAsync(image);
+                    await scannerBlock.SendAsync(image);
                 }
 
                 scannerBlock.Complete();
-                exporterBlock.Completion.Wait();
+                await exporterBlock.Completion;
             }
-            catch (AggregateException ex)
+            catch (Exception ex)
             {
-                foreach (var innerException in ex.InnerExceptions)
-                {
-                    var exType = innerException.GetType();
-                    var innerExMessage = innerException.Message;
-                    Log.Error(
-                        "Failed to scan image due {ExType} exception {InnerExMessage}", exType, innerExMessage);
-                }
+                Log.Error(ex, "Failed to scan images");
             }
 
             // write finish message

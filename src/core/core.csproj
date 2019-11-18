@@ -17,7 +17,7 @@
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
         <CodeAnalysisRuleSet>core.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
-    
+
     <ItemGroup>
       <Compile Include="..\GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
     </ItemGroup>

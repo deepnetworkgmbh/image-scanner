@@ -1,10 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+
 using cli.options;
 using CommandLine;
-using core.core;
+
+using core;
 using core.exporters;
+using core.images;
 using core.scanners;
 using Serilog;
 using Parser = CommandLine.Parser;
@@ -24,16 +26,16 @@ namespace cli
                     .CreateLogger();
 
                 Parser.Default.ParseArguments<TrivyOptions, ClairOptions>(args)
-                    .WithParsed<TrivyOptions>(RunTrivy)
+                    .WithParsed<TrivyOptions>(async options => await RunTrivy(options))
                     .WithParsed<ClairOptions>(RunClair);
             }
             catch (NotImplementedException e)
             {
-                Log.Fatal("{Message}", e.Message);
+                Log.Fatal(e, "Not implemented functionality was requested");
             }
             catch (Exception e)
             {
-                Log.Fatal("Something went wrong! {Message}", e.Message);
+                Log.Fatal(e, "Unexpected exception");
             }
         }
 
@@ -42,13 +44,11 @@ namespace cli
             throw new NotImplementedException();
         }
 
-        private static void RunTrivy(TrivyOptions trivyOptions)
+        private static async Task RunTrivy(TrivyOptions trivyOptions)
         {
-            // create exporter object
             var exporter = InitializeExporter(trivyOptions);
 
-            // create kube-client and get the list of unique images
-            var imageList = RetrieveImagesFromKube(trivyOptions.KubeConfigPath).Result;
+            var imageProvider = new KubernetesImageProvider(trivyOptions.KubeConfigPath);
 
             // set private container registry credentials
             var scanner = new Trivy(trivyOptions.TrivyCachePath)
@@ -60,18 +60,7 @@ namespace cli
             };
 
             // run core project's main
-            core.MainClass.Main(scanner, exporter, imageList, trivyOptions.ParallelismDegree);
-        }
-
-        private static async Task<IEnumerable<ContainerImage>> RetrieveImagesFromKube(string kubeConfigPath)
-        {
-            // create a Kubernetes client (factory pattern)
-            var kubeClient = await KubeClient.CreateAsync(kubeConfigPath);
-
-            // retrieve the unique list of images in the cluster
-            var images = await kubeClient.GetImages();
-
-            return images;
+            await KubeScanner.Scan(scanner, exporter, imageProvider, trivyOptions.ParallelismDegree);
         }
 
         private static IExporter InitializeExporter(GlobalOptions options)
@@ -86,7 +75,7 @@ namespace cli
             }
             catch (Exception e)
             {
-                Log.Fatal("{Message}", e.Message);
+                Log.Fatal(e, "Failed to initialize Exporter");
                 Environment.Exit(1);
             }
 
