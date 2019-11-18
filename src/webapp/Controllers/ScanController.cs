@@ -1,6 +1,11 @@
 ﻿using System.Threading.Tasks;
 
+using core;
+using core.images;
+
 using Microsoft.AspNetCore.Mvc;
+
+using webapp.Configuration;
 
 namespace webapp.Controllers
 {
@@ -11,6 +16,20 @@ namespace webapp.Controllers
     [Route("scan")]
     public class ScanController : ControllerBase
     {
+        private readonly KubeScannerConfiguration configuration;
+        private readonly KubernetesImageProvider k8SImages;
+        private readonly KubeScannerFactory factory;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScanController"/> class.
+        /// </summary>
+        public ScanController(ConfigurationParser configuration, KubernetesImageProvider k8sImages, KubeScannerFactory factory)
+        {
+            this.configuration = configuration.Get();
+            this.k8SImages = k8sImages;
+            this.factory = factory;
+        }
+
         /// <summary>
         /// Scans all the visible images in Kubernetes cluster.
         /// </summary>
@@ -19,7 +38,7 @@ namespace webapp.Controllers
         [Route("k8s")]
         public async Task ScanKubernetes()
         {
-            await Task.Yield();
+            await KubeScanner.Scan(this.factory.GetScanner(), this.factory.GetExporter(), this.k8SImages, this.configuration.Parallelization);
         }
 
         /// <summary>
@@ -31,7 +50,8 @@ namespace webapp.Controllers
         [Route("images")]
         public async Task ScanImages([FromBody]string[] images)
         {
-            await Task.Yield();
+            var imageProvider = new InMemoryImageProvider(images);
+            await KubeScanner.Scan(this.factory.GetScanner(), this.factory.GetExporter(), imageProvider, this.configuration.Parallelization);
         }
     }
 }

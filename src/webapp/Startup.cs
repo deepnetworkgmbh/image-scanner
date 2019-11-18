@@ -1,3 +1,5 @@
+using core.images;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -43,7 +45,13 @@ namespace webapp
                 .AddHealthChecks()
                 .AddCheck("Ready", () => HealthCheckResult.Healthy(), new[] { "liveness" });
 
+            services.AddSingleton<KubeScannerFactory>();
             services.AddSingleton<ConfigurationParser>();
+            services.AddSingleton<KubernetesImageProvider>(provider =>
+            {
+                var config = provider.GetService<ConfigurationParser>().Get();
+                return new KubernetesImageProvider(config.KubeConfigPath);
+            });
 
             services.AddSwaggerGen(c =>
             {

@@ -1,4 +1,5 @@
 ﻿parallelization: 10
+kubeConfigPath: /usr/local/.kube
 
 scanner:
   !trivy-scanner

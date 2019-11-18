@@ -11,6 +11,11 @@
         public int Parallelization { get; set; }
 
         /// <summary>
+        /// Path to kube config.
+        /// </summary>
+        public string KubeConfigPath { get; set; }
+
+        /// <summary>
         /// The scanner configuration.
         /// </summary>
         public IScannerConfiguration Scanner { get; set; }

@@ -22,6 +22,7 @@ namespace kube_scanner.tests
 
             // Assert
             config.Parallelization.Should().Be(10);
+            config.KubeConfigPath.Should().NotBeNullOrEmpty();
             config.Exporter.Should().BeOfType<FileExporterConfiguration>();
             config.Importer.Should().BeOfType<FileImporterConfiguration>();
             config.Scanner.Should().BeOfType<TrivyConfiguration>();

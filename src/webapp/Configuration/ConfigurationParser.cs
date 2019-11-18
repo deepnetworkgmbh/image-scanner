@@ -1,11 +1,9 @@
 ﻿using System;
 using System.IO;
-using System.Threading.Tasks;
 
 using Microsoft.Extensions.Configuration;
 
 using Serilog;
-using Serilog.Core;
 
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -21,7 +19,7 @@ namespace webapp.Configuration
         private static readonly ILogger Logger = Log.ForContext<ConfigurationParser>();
         private static readonly IDeserializer Deserializer;
 
-        private readonly string configFilePath;
+        private readonly Lazy<KubeScannerConfiguration> kubeScannerConfig;
 
         static ConfigurationParser()
         {
@@ -41,20 +39,21 @@ namespace webapp.Configuration
         public ConfigurationParser(IConfiguration configuration)
         {
             const string envVarName = "KUBE_SCANNER_CONFIG_FILE_PATH";
+            var configFilePath = configuration[envVarName];
 
-            if (string.IsNullOrEmpty(configuration[envVarName]))
+            if (string.IsNullOrEmpty(configFilePath))
             {
                 Logger.Fatal("There is no KUBE_SCANNER_CONFIG_FILE_PATH environment variable with Kube Scanner config filepath");
                 throw new Exception(envVarName);
             }
 
-            this.configFilePath = configuration[envVarName];
-
-            if (!File.Exists(this.configFilePath))
+            if (!File.Exists(configFilePath))
             {
-                Logger.Fatal("Kube Scanner config file does not exist at {ConfigFilePath}", this.configFilePath);
-                throw new Exception($"Kube Scanner config file does not exist at {this.configFilePath}");
+                Logger.Fatal("Kube Scanner config file does not exist at {ConfigFilePath}", configFilePath);
+                throw new Exception($"Kube Scanner config file does not exist at {configFilePath}");
             }
+
+            this.kubeScannerConfig = new Lazy<KubeScannerConfiguration>(() => this.Init(configFilePath));
         }
 
         /// <summary>
@@ -68,12 +67,18 @@ namespace webapp.Configuration
         }
 
         /// <summary>
-        /// Parse the application configuration file.
+        /// Parses Scanner Config on the first request and cache the result in memory.
         /// </summary>
         /// <returns>Kube Scanner configuration object.</returns>
-        public async Task<KubeScannerConfiguration> Parse()
+        public KubeScannerConfiguration Get()
         {
-            var configString = await File.ReadAllTextAsync(this.configFilePath);
+            return this.kubeScannerConfig.Value;
+        }
+
+        // Parse the application configuration file.
+        private KubeScannerConfiguration Init(string configFilePath)
+        {
+            var configString = File.ReadAllText(configFilePath);
 
             return Parse(configString);
         }
