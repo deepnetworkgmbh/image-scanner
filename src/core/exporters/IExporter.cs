@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using core.core;
-using core.scanners;
 
 namespace core.exporters
 {

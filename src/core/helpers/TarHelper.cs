@@ -1,6 +1,6 @@
 using System.IO;
 using System.Text;
-using Newtonsoft.Json.Linq;
+
 using SharpCompress.Readers;
 
 namespace core.helpers

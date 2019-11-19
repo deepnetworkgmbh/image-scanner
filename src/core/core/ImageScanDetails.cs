@@ -23,6 +23,15 @@ namespace core.core
             };
         }
 
+        public static ImageScanDetails NotFound()
+        {
+            return new ImageScanDetails
+            {
+                Timestamp = DateTime.UtcNow,
+                ScanResult = ScanResult.NotFound,
+            };
+        }
+
         [JsonProperty(PropertyName = "id")]
         public string Id { get; set; }
 
@@ -31,7 +40,7 @@ namespace core.core
 
         [JsonProperty(PropertyName = "scannerType")]
         [JsonConverter(typeof(StringEnumConverter))]
-        public ScannerType ScannerType { get; set; }
+        public ScannerType? ScannerType { get; set; }
 
         [JsonProperty(PropertyName = "scanResult")]
         [JsonConverter(typeof(StringEnumConverter))]
