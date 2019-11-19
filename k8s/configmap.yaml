@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-scanner-parameters-configmap
+data:
+  kube-scanner-parameters.yaml: |-
+    # Configuration values can be set as key-value properties
+    parallelization: 10
+    kubeConfigPath: /usr/.kube/kubeconfig
+    
+    scanner:
+      !trivy-scanner
+      binaryPath: /usr/local/bin/trivy
+      cachePath:
+      registries:
+        - address: https://registry.hub.docker.com
+          username:
+          password:
+        - address: myacr.azurecr.io
+          username: myacr
+          password: <MYACRPASSWD>
+    
+    exporter:
+      !file-exporter
+      path: ./scan-results/
+    
+    importer:
+      !file-importer
+      path: ./scan-results/

@@ -1,0 +1,38 @@
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0.100-alpine3.10 AS build
+WORKDIR /app/src
+COPY /src .
+RUN dotnet build kube-scanner.sln -c Release
+
+FROM build AS publish
+WORKDIR /app/src
+RUN dotnet publish webapp/webapp.csproj -c Release -o /app/publish --no-restore --no-build
+
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.0.0-alpine3.10 AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+
+COPY trivy /usr/local/bin/trivy
+
+# Change to 8080 because 80 requires elevated privileges
+ENV ASPNETCORE_URLS="http://*:8080"
+EXPOSE 8080
+
+ENV USER=kube-scanner-webapp
+ENV UID=10001
+ENV GID=10001
+RUN addgroup "$USER" --gid "$GID" \
+    && adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "$(pwd)" \
+    --ingroup "$USER" \
+    --no-create-home \
+    --uid "$UID" \
+    "$USER"
+RUN chown -R "$USER":"$USER" /app
+
+# disable managed debugging, which requires user access to /tmp directory owned by root
+ENV COMPlus_EnableDiagnostics=0
+
+USER "$USER"
+ENTRYPOINT ["dotnet","webapp.dll"]
