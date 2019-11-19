@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-scanner-webapp
+  labels:
+    app: kube-scanner-webapp
+    module: kube-scanner
+    version: 1.0.0
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  selector:
+    matchLabels:
+      app: kube-scanner-webapp
+  template:
+    metadata:
+      labels:
+        app: kube-scanner-webapp
+        module: kube-scanner
+        version: 1.0.0
+    spec:
+      containers:
+      - name: kube-scanner-webapp
+        image: deepnetwork/kube-scanner:webapp
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "200M"
+            cpu: "100m"
+          limits:
+            memory: "350M"
+            cpu: "200m"
+        readinessProbe:
+          httpGet:
+            path: /health/readiness
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health/liveness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+        ports:
+          - containerPort: 8080
+            name: main-http
+          - containerPort: 8081
+            name: actuator-http
+        securityContext:
+          runAsUser: 10001
+          runAsGroup: 10001
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+        volumeMounts:
+          - name: kube-config-file-volume
+            mountPath: /usr/.kube
+          - name: kube-scanner-parameters-volume
+            mountPath: /kube
+        env:
+          - name: KUBE_SCANNER_CONFIG_FILE_PATH
+            value: "/kube/kube-scanner-parameters.yaml"          
+      volumes:
+        - name: kube-config-file-volume
+          configMap:
+            name: kube-config-file-configmap
+            defaultMode: 0777
+        - name: kube-scanner-parameters-volume
+          configMap:
+            name: kube-scanner-parameters-configmap
+            defaultMode: 0777          
