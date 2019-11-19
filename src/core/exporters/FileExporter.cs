@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using core.core;
+using core.helpers;
 
 namespace core.exporters
 {
@@ -41,7 +42,7 @@ namespace core.exporters
                 .Replace(':', '_');
 
             var resultPath = Path.Combine(this.folderPath, $"{img}.json");
-            var jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(details);
+            var jsonResult = JsonSerializerWrapper.Serialize(details);
             await File.WriteAllTextAsync(resultPath, jsonResult);
         }
 
@@ -57,7 +58,7 @@ namespace core.exporters
                     .Replace(':', '_');
 
                 var resultPath = Path.Combine(this.folderPath, $"{img}.json");
-                var jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(result);
+                var jsonResult = JsonSerializerWrapper.Serialize(result);
                 await File.WriteAllTextAsync(resultPath, jsonResult);
             }
         }

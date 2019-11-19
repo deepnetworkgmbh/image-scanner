@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -91,7 +90,7 @@ namespace core.scanners
             }
             catch (Exception ex)
             {
-                Log.Error("{Text} {Message}", "Error in Trivy process", ex.Message);
+                Log.Error(ex, "Error in Trivy process");
             }
 
             var result = ImageScanDetails.New();

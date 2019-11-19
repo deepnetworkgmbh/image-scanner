@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 using core.images;
 
 using Microsoft.AspNetCore.Builder;
@@ -39,7 +41,13 @@ namespace webapp
         /// <param name="services">Services collection.</param>
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            // TODO: core uses Newtonsoft.Json, while here is System.Text.Json. Eventually, the only one should be left
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    options.JsonSerializerOptions.IgnoreNullValues = true;
+                });
 
             services
                 .AddHealthChecks()
