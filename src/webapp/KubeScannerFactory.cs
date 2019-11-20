@@ -37,15 +37,9 @@ namespace webapp
             switch (scannerConfiguration.Scanner)
             {
                 case TrivyConfiguration trivy:
-
-                    // TODO: init all available registries
-                    var registry = trivy.Registries.FirstOrDefault();
-
                     return new Trivy(trivy.CachePath)
                     {
-                        ContainerRegistryAddress = registry?.Address,
-                        ContainerRegistryUserName = registry?.Username,
-                        ContainerRegistryPassword = registry?.Password,
+                        Registries = trivy.Registries,
                         TrivyBinaryPath = trivy.BinaryPath,
                     };
                 default:

@@ -25,11 +25,7 @@ namespace core.scanners
             this.cachePath = cachePath;
         }
 
-        public string ContainerRegistryAddress { get; set; }
-
-        public string ContainerRegistryUserName { get; set; }
-
-        public string ContainerRegistryPassword { get; set; }
+        public RegistryCredentials[] Registries { get; set; }
 
         public string TrivyBinaryPath { get; set; }
 
@@ -67,16 +63,18 @@ namespace core.scanners
 
                 // If the provided private Container Registry (CR) name is equal to CR of image to be scanned,
                 // set private CR credentials as env vars to the process
-                if (!string.IsNullOrEmpty(this.ContainerRegistryAddress))
+                if (this.Registries != null)
                 {
                     var crNameOfImage = image.ContainerRegistry;
-                    var crNameOfParameter = this.ContainerRegistryAddress.Split('/')[0];
-
-                    if (crNameOfParameter == crNameOfImage)
+                    foreach (var registry in this.Registries)
                     {
-                        processStartInfo.EnvironmentVariables["TRIVY_AUTH_URL"] = this.ContainerRegistryAddress;
-                        processStartInfo.EnvironmentVariables["TRIVY_USERNAME"] = this.ContainerRegistryUserName;
-                        processStartInfo.EnvironmentVariables["TRIVY_PASSWORD"] = this.ContainerRegistryPassword;
+                        var crNameOfParameter = registry.Address.Split('/')[0];
+                        if (crNameOfParameter == crNameOfImage)
+                        {
+                            processStartInfo.EnvironmentVariables["TRIVY_AUTH_URL"] = registry.Address;
+                            processStartInfo.EnvironmentVariables["TRIVY_USERNAME"] = registry.Username;
+                            processStartInfo.EnvironmentVariables["TRIVY_PASSWORD"] = registry.Password;
+                        }
                     }
                 }
 

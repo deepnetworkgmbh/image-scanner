@@ -1,4 +1,4 @@
-﻿namespace webapp.Configuration
+﻿namespace core.scanners
 {
     /// <summary>
     /// Container Registry credentials.

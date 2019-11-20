@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 using cli.options;
@@ -51,11 +52,20 @@ namespace cli
             var imageProvider = new KubernetesImageProvider(trivyOptions.KubeConfigPath);
 
             // set private container registry credentials
+            var registries = new RegistryCredentials[1];
+
+            var registry = new RegistryCredentials
+            {
+                Address = trivyOptions.ContainerRegistryAddress,
+                Username = trivyOptions.ContainerRegistryUserName,
+                Password = trivyOptions.ContainerRegistryPassword,
+            };
+
+            registries.Append(registry);
+
             var scanner = new Trivy(trivyOptions.TrivyCachePath)
             {
-                ContainerRegistryAddress = trivyOptions.ContainerRegistryAddress,
-                ContainerRegistryUserName = trivyOptions.ContainerRegistryUserName,
-                ContainerRegistryPassword = trivyOptions.ContainerRegistryPassword,
+                Registries = registries,
                 TrivyBinaryPath = trivyOptions.TrivyBinaryPath,
             };
 

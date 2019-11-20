@@ -1,4 +1,6 @@
-﻿namespace webapp.Configuration
+﻿using core.scanners;
+
+namespace webapp.Configuration
 {
     /// <summary>
     /// Trivy scanner configuration.

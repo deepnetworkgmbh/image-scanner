@@ -16,7 +16,7 @@ data:
         - address: myacr.azurecr.io
           username: myacr
           password: <MYACRPASSWD>
-        - address: https://registry.hub.docker.com
+        - address: registry.hub.docker.com
           username: dockerhubuser
           password: <MYDOCKERHUBPASSWD>
     
