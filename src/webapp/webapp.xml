@@ -173,6 +173,13 @@
             <param name="images">Array of image tags.</param>
             <returns>Scan results.</returns>
         </member>
+        <member name="M:webapp.Controllers.ScanResultsController.ScanImage(System.String)">
+            <summary>
+            Returns scan result for requested image.
+            </summary>
+            <param name="image">The image tag.</param>
+            <returns>Scan results.</returns>
+        </member>
         <member name="T:webapp.Infrastructure.HttpRequestLoggingMiddleware">
             <summary>
             Writes logs in common format for any incoming HTTP request.
@@ -233,6 +240,131 @@
             Returns a new instance of <see cref="T:core.images.KubernetesImageProvider"/> class.
             </summary>
             <returns>KubernetesImageProvider instance.</returns>
+        </member>
+        <member name="T:webapp.Models.TrivyScanResultFull">
+            <summary>
+            Represents detailed information about a single Trivy Scan Result.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyScanResultFull.Image">
+            <summary>
+            The full image name.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyScanResultFull.ScanResult">
+            <summary>
+            Scan result.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyScanResultFull.Description">
+            <summary>
+            Description for Failed scans.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyScanResultFull.Targets">
+            <summary>
+            List of scanned targets.
+            </summary>
+        </member>
+        <member name="T:webapp.Models.TrivyScanTarget">
+            <summary>
+            List of vulnerabilities in the scanned target (OS and application packages).
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyScanTarget.Target">
+            <summary>
+            The target name. for example, OS name or ruby gems file.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyScanTarget.Vulnerabilities">
+            <summary>
+            The list of found vulnerabilities.
+            </summary>
+        </member>
+        <member name="T:webapp.Models.TrivyVulnerabilityDescription">
+            <summary>
+            Single vulnerability details.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyVulnerabilityDescription.VulnerabilityID">
+            <summary>
+            CVE name.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyVulnerabilityDescription.PkgName">
+            <summary>
+            Package name, whenre CVE was discovered.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyVulnerabilityDescription.InstalledVersion">
+            <summary>
+            The version of package in container.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyVulnerabilityDescription.FixedVersion">
+            <summary>
+            the version of package, where the CVE was fixed.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyVulnerabilityDescription.Title">
+            <summary>
+            Short CVE title.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyVulnerabilityDescription.Description">
+            <summary>
+            Detailed CVE description.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyVulnerabilityDescription.Severity">
+            <summary>
+            The severity.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyVulnerabilityDescription.References">
+            <summary>
+            List of references with further information.
+            </summary>
+        </member>
+        <member name="T:webapp.Models.TrivyScanResultShort">
+            <summary>
+            Represents short summary about a single Trivy Scan Result.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyScanResultShort.Image">
+            <summary>
+            The full image name.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyScanResultShort.ScanResult">
+            <summary>
+            Scan result.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyScanResultShort.Description">
+            <summary>
+            Description for Failed scans.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.TrivyScanResultShort.Counters">
+            <summary>
+            Counts issues by Severity.
+            </summary>
+        </member>
+        <member name="T:webapp.Models.VulnerabilityCounters">
+            <summary>
+            Represents the amount of issues with a particular severity.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.VulnerabilityCounters.Severity">
+            <summary>
+            The CVE severity.
+            </summary>
+        </member>
+        <member name="P:webapp.Models.VulnerabilityCounters.Count">
+            <summary>
+            Amount of CVEs with this severity.
+            </summary>
         </member>
         <member name="T:webapp.Program">
             <summary>

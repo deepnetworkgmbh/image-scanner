@@ -66,7 +66,7 @@ namespace core.importers
             }
             else
             {
-                return ImageScanDetails.NotFound();
+                return ImageScanDetails.NotFound(image);
             }
         }
     }

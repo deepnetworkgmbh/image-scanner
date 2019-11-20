@@ -1,7 +1,5 @@
 ﻿using System;
 
-using core.scanners;
-
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -23,12 +21,13 @@ namespace core.core
             };
         }
 
-        public static ImageScanDetails NotFound()
+        public static ImageScanDetails NotFound(ContainerImage image)
         {
             return new ImageScanDetails
             {
                 Timestamp = DateTime.UtcNow,
                 ScanResult = ScanResult.NotFound,
+                Image = image,
             };
         }
 
