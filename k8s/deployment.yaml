@@ -69,9 +69,13 @@ spec:
             mountPath: /usr/.kube
           - name: kube-scanner-parameters-volume
             mountPath: /kube
+          - name: storage-volume
+            mountPath: "/storage"
         env:
           - name: KUBE_SCANNER_CONFIG_FILE_PATH
-            value: "/kube/kube-scanner-parameters.yaml"          
+            value: "/kube/kube-scanner-parameters.yaml"
+      securityContext:
+        fsGroup: 10001
       volumes:
         - name: kube-config-file-volume
           configMap:
@@ -80,4 +84,7 @@ spec:
         - name: kube-scanner-parameters-volume
           configMap:
             name: kube-scanner-parameters-configmap
-            defaultMode: 0777          
+            defaultMode: 0777
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: storage-pvc
