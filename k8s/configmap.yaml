@@ -13,12 +13,12 @@ data:
       binaryPath: /usr/local/bin/trivy
       cachePath:
       registries:
-        - address: https://registry.hub.docker.com
-          username:
-          password:
         - address: myacr.azurecr.io
           username: myacr
           password: <MYACRPASSWD>
+        - address: https://registry.hub.docker.com
+          username: dockerhubuser
+          password: <MYDOCKERHUBPASSWD>
     
     exporter:
       !file-exporter

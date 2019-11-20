@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
       - name: kube-scanner-webapp
-        image: deepnetwork/kube-scanner:webapp
+        image: deepnetwork/kube-scanner-webapp:latest
         imagePullPolicy: Always
         resources:
           requests:
