@@ -9,28 +9,31 @@ using Serilog;
 
 namespace core
 {
-    public static class KubeScanner
+    public class KubeScanner
     {
-        public static async Task Scan(IScanner scanner, IExporter exporter, IImageProvider images, int parallelismDegree)
+        public async Task Scan(IScanner scanner, IExporter exporter, IImageProvider images, int parallelismDegree)
         {
             try
             {
                 // create the pipeline of actions
                 var scannerBlock = new TransformBlock<ContainerImage, ImageScanDetails>(
-                    async i => await scanner.Scan(i), new ExecutionDataflowBlockOptions
+                    i => Transform(scanner, i),
+                    new ExecutionDataflowBlockOptions
                     {
                         MaxDegreeOfParallelism = parallelismDegree,
                     });
 
                 var exporterBlock = new ActionBlock<ImageScanDetails>(
-                    c => { exporter.UploadAsync(c); }, new ExecutionDataflowBlockOptions
+                    exporter.UploadAsync,
+                    new ExecutionDataflowBlockOptions
                     {
                         MaxDegreeOfParallelism = parallelismDegree,
                     });
 
                 // link the actions
                 scannerBlock.LinkTo(
-                    exporterBlock, new DataflowLinkOptions
+                    exporterBlock,
+                    new DataflowLinkOptions
                     {
                         PropagateCompletion = true,
                     });
@@ -38,8 +41,6 @@ namespace core
                 // scan images in parallel
                 foreach (var image in await images.GetImages())
                 {
-                    Log.Information("Scanning image {Image}", image.FullName);
-
                     await scannerBlock.SendAsync(image);
                 }
 
@@ -53,6 +54,12 @@ namespace core
 
             // write finish message
             Log.Information("kube-scanner finished execution");
+        }
+
+        private static async Task<ImageScanDetails> Transform(IScanner scanner, ContainerImage image)
+        {
+            Log.Information("Scanning image {Image}", image.FullName);
+            return await scanner.Scan(image);
         }
     }
 }
