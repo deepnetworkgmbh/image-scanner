@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kube-scanner-webapp
+  name: kube-scanner
   labels:
-    app: kube-scanner-webapp
+    app: kube-scanner
     module: kube-scanner
-    version: 1.0.0
+    version: 0.1
 spec:
   replicas: 1
   strategy:
@@ -16,16 +16,16 @@ spec:
   minReadySeconds: 5
   selector:
     matchLabels:
-      app: kube-scanner-webapp
+      app: kube-scanner
   template:
     metadata:
       labels:
-        app: kube-scanner-webapp
+        app: kube-scanner
         module: kube-scanner
-        version: 1.0.0
+        version: 0.1
     spec:
       containers:
-      - name: kube-scanner-webapp
+      - name: kube-scanner
         image: deepnetwork/kube-scanner-webapp:latest
         imagePullPolicy: Always
         resources:
@@ -56,8 +56,6 @@ spec:
         ports:
           - containerPort: 8080
             name: main-http
-          - containerPort: 8081
-            name: actuator-http
         securityContext:
           runAsUser: 10001
           runAsGroup: 10001
@@ -87,4 +85,4 @@ spec:
             defaultMode: 0777
         - name: storage-volume
           persistentVolumeClaim:
-            claimName: storage-pvc
+            claimName: kube-scanner-storage

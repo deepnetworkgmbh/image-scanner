@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: kube-scanner-webapp
+  name: kube-scanner
   labels:
-    app: kube-scanner-webapp
+    app: kube-scanner
     module: kube-scanner
 spec:
   selector:
-    app: kube-scanner-webapp
+    app: kube-scanner
   ports:
     - name: http
       protocol: TCP
