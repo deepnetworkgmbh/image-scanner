@@ -11,7 +11,7 @@ FROM mcr.microsoft.com/dotnet/core/aspnet:3.0.0-alpine3.10 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-COPY trivy /usr/local/bin/trivy
+COPY /trivy/trivy /usr/local/bin/trivy
 
 # Change to 8080 because 80 requires elevated privileges
 ENV ASPNETCORE_URLS="http://*:8080"
