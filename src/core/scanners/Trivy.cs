@@ -42,6 +42,11 @@ namespace core.scanners
                             "/.kube-scanner/.trivycache";
             }
 
+            if (!Directory.Exists(cachePath))
+            {
+                Directory.CreateDirectory(cachePath);
+            }
+
             this.cachePath = cachePath;
             this.trivyBinaryPath = trivyBinaryPath;
 
@@ -50,9 +55,7 @@ namespace core.scanners
 
         public async Task<ImageScanDetails> Scan(ContainerImage image)
         {
-            Logger
-                .ForContext("Image", image)
-                .Information("Scan was started");
+            Logger.Information("{Image} can was started", image);
 
             // set the scan result file name
             var scanResultFile = ScanResultsFolder + CreateRandomFileName("/result-", 6);
@@ -73,9 +76,7 @@ namespace core.scanners
                 // set private CR credentials as env vars to the process
                 if (this.registriesMap.TryGetValue(image.ContainerRegistry, out var registry))
                 {
-                    Logger
-                        .ForContext("Image", image)
-                        .Information("Scanning from {RegistryAddress}", registry.Address);
+                    Logger.Information("Scanning {Image} from {RegistryAddress}", image, registry.Address);
 
                     processStartInfo.EnvironmentVariables["TRIVY_AUTH_URL"] = registry.Address;
                     processStartInfo.EnvironmentVariables["TRIVY_USERNAME"] = registry.Username;
@@ -83,9 +84,7 @@ namespace core.scanners
                 }
                 else
                 {
-                    Logger
-                        .ForContext("Image", image)
-                        .Information("Scanning from {RegistryAddress}", "Default Docker Hub");
+                    Logger.Information("Scanning {Image} from {RegistryAddress}", image, "Default Docker Hub");
                 }
 
                 var processResults = await ProcessEx.RunAsync(processStartInfo);
@@ -95,8 +94,7 @@ namespace core.scanners
                     : JArray.Parse(File.ReadAllText(@scanResultFile)).ToString();
 
                 Logger
-                    .ForContext("Image", image)
-                    .Information("Scan was finished with exit code {ExitCode} in {ScanningTime}", processResults.ExitCode, processResults.RunTime);
+                    .Information("{Image} scan was finished with exit code {ExitCode} in {ScanningTime}", image, processResults.ExitCode, processResults.RunTime);
 
                 var logs = string.Join(Environment.NewLine, processResults.StandardOutput);
 
@@ -112,18 +110,14 @@ namespace core.scanners
                 {
                     var fatalLogText = fatalError.Split("FATAL")[1];
 
-                    Logger
-                        .ForContext("Image", image)
-                        .Error("Scan failed: {FailedScanLogs}", fatalLogText);
+                    Logger.Error("{Image} scan failed: {FailedScanLogs}", image, fatalLogText);
 
                     result.ScanResult = ScanResult.Failed;
                     result.Payload = fatalLogText;
                 }
                 else
                 {
-                    Logger
-                        .ForContext("Image", image)
-                        .Error("Scan succeeded");
+                    Logger.Error("{Image} can succeeded", image);
 
                     result.ScanResult = ScanResult.Succeeded;
                     result.Payload = scanOutput;
@@ -133,9 +127,7 @@ namespace core.scanners
             }
             catch (Exception ex)
             {
-                Log
-                    .ForContext("Image", image)
-                    .Error(ex, "Error in Trivy process");
+                Log.Error(ex, "{Image} scan failed. Error in Trivy process", image);
 
                 var result = ImageScanDetails.New();
                 result.Image = image;

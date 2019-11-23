@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -47,8 +48,9 @@ namespace core
                 });
         }
 
-        public async Task Scan(IImageProvider images)
+        public async Task<int> Scan(IImageProvider images)
         {
+            var counter = 0;
             try
             {
                 var containerImages = (await images.GetImages()).ToArray();
@@ -58,6 +60,7 @@ namespace core
                 foreach (var image in containerImages)
                 {
                     await this.scannerBlock.SendAsync(image);
+                    counter++;
                 }
 
                 Logger.Information("Finished enqueueing {ImageCount} images", containerImages.Length);
@@ -65,7 +68,10 @@ namespace core
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to scan images");
+                throw;
             }
+
+            return counter;
         }
 
         public async Task Complete()

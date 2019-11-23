@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 using core;
 using core.images;
@@ -32,10 +33,17 @@ namespace webapp.Controllers
         /// <returns>Acknowledgement.</returns>
         [HttpPost]
         [Route("k8s")]
-        public async Task<StatusCodeResult> ScanKubernetes()
+        public async Task<ObjectResult> ScanKubernetes()
         {
-            await this.scanner.Scan(this.imageProvider);
-            return this.StatusCode(201);
+            try
+            {
+                var count = await this.scanner.Scan(this.imageProvider);
+                return this.StatusCode(201, $"Enqueued {count} images to scan");
+            }
+            catch (Exception ex)
+            {
+                return this.StatusCode(500, $"Scan process failed due {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -45,11 +53,18 @@ namespace webapp.Controllers
         /// <returns>Acknowledgement.</returns>
         [HttpPost]
         [Route("images")]
-        public async Task<StatusCodeResult> ScanImages([FromBody]string[] images)
+        public async Task<ObjectResult> ScanImages([FromBody] string[] images)
         {
-            var inMemoryProvider = new InMemoryImageProvider(images);
-            await this.scanner.Scan(inMemoryProvider);
-            return this.StatusCode(201);
+            try
+            {
+                var inMemoryProvider = new InMemoryImageProvider(images);
+                var count = await this.scanner.Scan(inMemoryProvider);
+                return this.StatusCode(201, $"Enqueued {count} images to scan");
+            }
+            catch (Exception ex)
+            {
+                return this.StatusCode(500, $"Scan process failed due {ex.Message}");
+            }
         }
     }
 }

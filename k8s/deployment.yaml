@@ -66,12 +66,12 @@ spec:
           - name: kube-config-file-volume
             mountPath: /usr/.kube
           - name: kube-scanner-parameters-volume
-            mountPath: /kube
+            mountPath: /kube-scanner
           - name: storage-volume
             mountPath: "/storage"
         env:
           - name: KUBE_SCANNER_CONFIG_FILE_PATH
-            value: "/kube/kube-scanner-parameters.yaml"
+            value: "/kube-scanner/kube-scanner-parameters.yaml"
       securityContext:
         fsGroup: 10001
       volumes:

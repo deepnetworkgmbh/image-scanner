@@ -38,11 +38,13 @@ namespace core.core
 
                 var containers = podList
                     .Items
-                    .SelectMany(pod => pod.Spec.Containers, (pod, container) => container.Image)
+                    .Where(pod => pod.Spec.Containers != null)
+                    .SelectMany(pod => pod.Spec.Containers, (pod, container) => container?.Image)
                     .Select(ContainerImage.FromFullName);
 
                 var initContainers = podList
                     .Items
+                    .Where(pod => pod.Spec.InitContainers != null)
                     .SelectMany(pod => pod.Spec.InitContainers, (pod, container) => container.Image)
                     .Select(ContainerImage.FromFullName);
 
@@ -53,7 +55,7 @@ namespace core.core
 
                 return images;
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
                 Logger.Error(ex, "failed to get Images");
             }
