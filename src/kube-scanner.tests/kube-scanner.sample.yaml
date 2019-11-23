@@ -1,4 +1,5 @@
 ﻿parallelization: 10
+buffer: 1000
 kubeConfigPath: /usr/local/.kube
 
 scanner:
@@ -6,10 +7,12 @@ scanner:
   binaryPath: /usr/local/bin/trivy
   cachePath: /root/.cache/
   registries:
-    - address: https://registry.hub.docker.com
+    - name: deepnetwork
+      address: https://registry.hub.docker.com
       username:
       password:
-    - address: myacr.azurecr.io
+    - name: myacr.azurecr.io
+      address: myacr.azurecr.io
       username: myacr
       password: <MYACRPASSWD>
 

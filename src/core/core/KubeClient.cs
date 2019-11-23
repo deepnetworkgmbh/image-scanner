@@ -6,14 +6,14 @@ using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using k8s;
-using k8s.Exceptions;
 using Serilog;
-using static k8s.KubernetesClientConfiguration;
 
 namespace core.core
 {
     public class KubeClient
     {
+        private static readonly ILogger Logger = Log.ForContext<KubeClient>();
+
         private KubernetesClientConfiguration kubeConfig;
 
         private KubeClient()
@@ -22,8 +22,8 @@ namespace core.core
 
         public static Task<KubeClient> CreateAsync(string kubeConfigStr)
         {
-            var ret = new KubeClient();
-            return ret.InitializeAsync(kubeConfigStr);
+            var kubeClient = new KubeClient();
+            return kubeClient.InitializeAsync(kubeConfigStr);
         }
 
         public async Task<IEnumerable<ContainerImage>> GetImages()
@@ -36,19 +36,26 @@ namespace core.core
                 // get the pod list
                 var podList = await kubeClient.ListPodForAllNamespacesAsync();
 
-                // generate a unique list of images
-                var imageList = (from pod in podList.Items from container in pod.Spec.Containers select container.Image)
+                var containers = podList
+                    .Items
+                    .SelectMany(pod => pod.Spec.Containers, (pod, container) => container.Image)
+                    .Select(ContainerImage.FromFullName);
+
+                var initContainers = podList
+                    .Items
+                    .SelectMany(pod => pod.Spec.InitContainers, (pod, container) => container.Image)
+                    .Select(ContainerImage.FromFullName);
+
+                var images = containers
+                    .Concat(initContainers)
                     .Distinct()
-                    .Select(ContainerImage.FromFullName)
                     .ToList();
 
-                return imageList;
+                return images;
             }
-            catch (HttpRequestException e)
+            catch (HttpRequestException ex)
             {
-                // if kubernetes cluster is not accessible
-                Log.Fatal("{Message}", e.Message);
-                Environment.Exit(1);
+                Logger.Error(ex, "failed to get Images");
             }
 
             return new List<ContainerImage>(0);
@@ -58,26 +65,25 @@ namespace core.core
         {
             try
             {
-                var kubeConfigDefaultLocation = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), ".kube\\config") : Path.Combine(Environment.GetEnvironmentVariable("HOME"), ".kube/config");
+                var kubeConfigDefaultLocation = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), ".kube\\config")
+                    : Path.Combine(Environment.GetEnvironmentVariable("HOME"), ".kube/config");
 
                 // check if kube config is accessible
-                var configuration = await LoadKubeConfigAsync(kubeConfigStr ?? kubeConfigDefaultLocation);
-                this.kubeConfig = BuildConfigFromConfigObject(configuration);
-            }
-            catch (KubeConfigException e)
-            {
-                Log.Fatal("{Message}", e.Message);
-                Environment.Exit(1);
+                var configuration = await KubernetesClientConfiguration.LoadKubeConfigAsync(kubeConfigStr ?? kubeConfigDefaultLocation);
+                this.kubeConfig = KubernetesClientConfiguration.BuildConfigFromConfigObject(configuration);
             }
             catch (Exception ex) when (ex.Source == "System.Security.Cryptography.X509Certificates")
             {
-                Log.Fatal("KubeConfig OpenSsl Certificate Error {Message}", ex.Message);
-                Environment.Exit(1);
+                Logger
+                    .ForContext("KubeConfig", kubeConfigStr)
+                    .Error(ex, "KubeConfig OpenSsl Certificate Error");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Log.Fatal("{Message}", e.Message);
-                Environment.Exit(1);
+                Log
+                    .ForContext("KubeConfig", kubeConfigStr)
+                    .Error(ex, "Failed to init kube-client with");
             }
 
             return this;

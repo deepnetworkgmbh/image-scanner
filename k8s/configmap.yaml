@@ -6,6 +6,7 @@ data:
   kube-scanner-parameters.yaml: |-
     # Configuration values can be set as key-value properties
     parallelization: 10
+    buffer: 1000
     kubeConfigPath: /usr/.kube/kubeconfig
     
     scanner:
@@ -13,12 +14,14 @@ data:
       binaryPath: /usr/local/bin/trivy
       cachePath: /storage/.trivycache
       registries:
-        - address: myacr.azurecr.io
+        - name: myacr.azurecr.io
+          address: myacr.azurecr.io
           username: myacr
           password: <MYACRPASSWD>
-        - address: registry.hub.docker.com
-          username: dockerhubuser
-          password: <MYDOCKERHUBPASSWD>
+        - name: deepnetwork
+          address: http://registry.hub.docker.com
+          username: 
+          password: 
     
     exporter:
       !file-exporter

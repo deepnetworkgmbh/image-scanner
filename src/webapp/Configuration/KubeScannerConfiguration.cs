@@ -11,6 +11,11 @@
         public int Parallelization { get; set; }
 
         /// <summary>
+        /// The buffer size.
+        /// </summary>
+        public int Buffer { get; set; }
+
+        /// <summary>
         /// Path to kube config.
         /// </summary>
         public string KubeConfigPath { get; set; }

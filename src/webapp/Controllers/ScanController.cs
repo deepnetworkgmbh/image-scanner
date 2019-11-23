@@ -5,8 +5,6 @@ using core.images;
 
 using Microsoft.AspNetCore.Mvc;
 
-using webapp.Configuration;
-
 namespace webapp.Controllers
 {
     /// <summary>
@@ -16,18 +14,16 @@ namespace webapp.Controllers
     [Route("scan")]
     public class ScanController : ControllerBase
     {
-        private readonly KubeScannerConfiguration configuration;
-        private readonly KubernetesImageProvider k8SImages;
-        private readonly KubeScannerFactory factory;
+        private readonly KubeScanner scanner;
+        private readonly KubernetesImageProvider imageProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ScanController"/> class.
         /// </summary>
-        public ScanController(ConfigurationParser configuration, KubernetesImageProvider k8sImages, KubeScannerFactory factory)
+        public ScanController(KubeScanner scanner, KubernetesImageProvider imageProvider)
         {
-            this.configuration = configuration.Get();
-            this.k8SImages = k8sImages;
-            this.factory = factory;
+            this.scanner = scanner;
+            this.imageProvider = imageProvider;
         }
 
         /// <summary>
@@ -36,9 +32,10 @@ namespace webapp.Controllers
         /// <returns>Acknowledgement.</returns>
         [HttpPost]
         [Route("k8s")]
-        public async Task ScanKubernetes()
+        public async Task<StatusCodeResult> ScanKubernetes()
         {
-            await KubeScanner.Scan(this.factory.GetScanner(), this.factory.GetExporter(), this.k8SImages, this.configuration.Parallelization);
+            await this.scanner.Scan(this.imageProvider);
+            return this.StatusCode(201);
         }
 
         /// <summary>
@@ -48,10 +45,11 @@ namespace webapp.Controllers
         /// <returns>Acknowledgement.</returns>
         [HttpPost]
         [Route("images")]
-        public async Task ScanImages([FromBody]string[] images)
+        public async Task<StatusCodeResult> ScanImages([FromBody]string[] images)
         {
-            var imageProvider = new InMemoryImageProvider(images);
-            await KubeScanner.Scan(this.factory.GetScanner(), this.factory.GetExporter(), imageProvider, this.configuration.Parallelization);
+            var inMemoryProvider = new InMemoryImageProvider(images);
+            await this.scanner.Scan(inMemoryProvider);
+            return this.StatusCode(201);
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using core.core;
@@ -9,57 +10,77 @@ using Serilog;
 
 namespace core
 {
-    public class KubeScanner
+    public class KubeScanner : IDisposable
     {
-        public async Task Scan(IScanner scanner, IExporter exporter, IImageProvider images, int parallelismDegree)
+        private static readonly ILogger Logger = Log.ForContext<KubeScanner>();
+
+        private readonly TransformBlock<ContainerImage, ImageScanDetails> scannerBlock;
+        private readonly ActionBlock<ImageScanDetails> exporterBlock;
+
+        public KubeScanner(IScanner scanner, IExporter exporter, int parallelismDegree, int bufferSize)
+        {
+            // create the pipeline of actions
+            this.scannerBlock = new TransformBlock<ContainerImage, ImageScanDetails>(
+                scanner.Scan,
+                new ExecutionDataflowBlockOptions
+                {
+                    BoundedCapacity = bufferSize,
+                    MaxDegreeOfParallelism = parallelismDegree,
+                    EnsureOrdered = false,
+                });
+
+            this.exporterBlock = new ActionBlock<ImageScanDetails>(
+                exporter.UploadAsync,
+                new ExecutionDataflowBlockOptions
+                {
+                    BoundedCapacity = bufferSize,
+                    MaxDegreeOfParallelism = parallelismDegree,
+                    EnsureOrdered = false,
+                });
+
+            // link the actions
+            this.scannerBlock.LinkTo(
+                this.exporterBlock,
+                new DataflowLinkOptions
+                {
+                    PropagateCompletion = true,
+                });
+        }
+
+        public async Task Scan(IImageProvider images)
         {
             try
             {
-                // create the pipeline of actions
-                var scannerBlock = new TransformBlock<ContainerImage, ImageScanDetails>(
-                    i => Transform(scanner, i),
-                    new ExecutionDataflowBlockOptions
-                    {
-                        MaxDegreeOfParallelism = parallelismDegree,
-                    });
+                var containerImages = (await images.GetImages()).ToArray();
 
-                var exporterBlock = new ActionBlock<ImageScanDetails>(
-                    exporter.UploadAsync,
-                    new ExecutionDataflowBlockOptions
-                    {
-                        MaxDegreeOfParallelism = parallelismDegree,
-                    });
+                Logger.Information("Scanning {ImageCount} images", containerImages.Length);
 
-                // link the actions
-                scannerBlock.LinkTo(
-                    exporterBlock,
-                    new DataflowLinkOptions
-                    {
-                        PropagateCompletion = true,
-                    });
-
-                // scan images in parallel
-                foreach (var image in await images.GetImages())
+                foreach (var image in containerImages)
                 {
-                    await scannerBlock.SendAsync(image);
+                    await this.scannerBlock.SendAsync(image);
                 }
 
-                scannerBlock.Complete();
-                await exporterBlock.Completion;
+                Logger.Information("Finished enqueueing {ImageCount} images", containerImages.Length);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Failed to scan images");
+                Logger.Error(ex, "Failed to scan images");
             }
-
-            // write finish message
-            Log.Information("kube-scanner finished execution");
         }
 
-        private static async Task<ImageScanDetails> Transform(IScanner scanner, ContainerImage image)
+        public async Task Complete()
         {
-            Log.Information("Scanning image {Image}", image.FullName);
-            return await scanner.Scan(image);
+            Logger.Information("Completing KubeScanner");
+
+            this.scannerBlock.Complete();
+
+            await this.exporterBlock.Completion;
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.Complete().Wait();
         }
     }
 }

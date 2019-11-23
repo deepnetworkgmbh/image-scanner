@@ -63,14 +63,10 @@ namespace cli
 
             registries.Append(registry);
 
-            var scanner = new Trivy(trivyOptions.TrivyCachePath)
-            {
-                Registries = registries,
-                TrivyBinaryPath = trivyOptions.TrivyBinaryPath,
-            };
+            var scanner = new Trivy(trivyOptions.TrivyCachePath, trivyOptions.TrivyBinaryPath, registries);
 
-            // run core project's main
-            await KubeScanner.Scan(scanner, exporter, imageProvider, trivyOptions.ParallelismDegree);
+            using var kubeScanner = new KubeScanner(scanner, exporter, trivyOptions.ParallelismDegree, 1000);
+            await kubeScanner.Scan(imageProvider);
         }
 
         private static IExporter InitializeExporter(GlobalOptions options)

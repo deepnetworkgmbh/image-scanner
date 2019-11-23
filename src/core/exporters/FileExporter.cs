@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using core.core;
 using core.helpers;
@@ -18,49 +19,44 @@ namespace core.exporters
             // if folder path is not provided, use default folder
             if (string.IsNullOrEmpty(folderPath))
             {
-                folderPath = Path.Combine(
+                this.folderPath = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                     ".kube-scanner",
                     "exports");
+            }
+            else
+            {
+                this.folderPath = folderPath;
             }
 
             if (!Directory.Exists(folderPath))
             {
                 Directory.CreateDirectory(folderPath);
             }
-
-            this.folderPath = folderPath;
         }
 
         public async Task UploadAsync(ImageScanDetails details)
         {
+            await this.WriteSingleItem(details);
+        }
+
+        public async Task UploadBulkAsync(IEnumerable<ImageScanDetails> results)
+        {
+            await Task.WhenAll(results.Select(this.WriteSingleItem));
+        }
+
+        private async Task WriteSingleItem(ImageScanDetails result)
+        {
             // write JSON directly to a file
-            var img = details
+            var img = result
                 .Image
                 .FullName
                 .Replace('/', '_')
                 .Replace(':', '_');
 
             var resultPath = Path.Combine(this.folderPath, $"{img}.json");
-            var jsonResult = JsonSerializerWrapper.Serialize(details);
+            var jsonResult = JsonSerializerWrapper.Serialize(result);
             await File.WriteAllTextAsync(resultPath, jsonResult);
-        }
-
-        public async Task UploadBulkAsync(IEnumerable<ImageScanDetails> results)
-        {
-            foreach (var result in results)
-            {
-                // write JSON directly to a file
-                var img = result
-                    .Image
-                    .FullName
-                    .Replace('/', '_')
-                    .Replace(':', '_');
-
-                var resultPath = Path.Combine(this.folderPath, $"{img}.json");
-                var jsonResult = JsonSerializerWrapper.Serialize(result);
-                await File.WriteAllTextAsync(resultPath, jsonResult);
-            }
         }
     }
 }

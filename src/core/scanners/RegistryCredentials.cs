@@ -6,6 +6,11 @@
     public class RegistryCredentials
     {
         /// <summary>
+        /// Container registry unique name. For example, name of organization in Docker Hub or myacr.azurecr.io.
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
         /// Container registry address. For example, https://registry.hub.docker.com or myacr.azurecr.io.
         /// </summary>
         public string Address { get; set; }

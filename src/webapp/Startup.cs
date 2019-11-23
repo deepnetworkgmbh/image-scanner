@@ -1,6 +1,10 @@
 using System.Text.Json.Serialization;
 
+using core;
+using core.exporters;
 using core.images;
+using core.importers;
+using core.scanners;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -53,9 +57,19 @@ namespace webapp
                 .AddHealthChecks()
                 .AddCheck("Ready", () => HealthCheckResult.Healthy(), new[] { "liveness" });
 
-            services.AddSingleton<KubeScannerFactory>();
             services.AddSingleton<ConfigurationParser>();
-            services.AddSingleton<KubernetesImageProvider>(provider =>
+            services.AddSingleton<KubeScannerFactory>();
+            services.AddTransient(provider => provider.GetService<KubeScannerFactory>().GetScanner());
+            services.AddTransient(provider => provider.GetService<KubeScannerFactory>().GetExporter());
+            services.AddTransient(provider => provider.GetService<KubeScannerFactory>().GetImporter());
+            services.AddSingleton<KubeScanner>(provider =>
+            {
+                var config = provider.GetService<ConfigurationParser>().Get();
+                var scanner = provider.GetService<IScanner>();
+                var exporter = provider.GetService<IExporter>();
+                return new KubeScanner(scanner, exporter, config.Parallelization, config.Buffer);
+            });
+            services.AddSingleton(provider =>
             {
                 var config = provider.GetService<ConfigurationParser>().Get();
                 return new KubernetesImageProvider(config.KubeConfigPath);

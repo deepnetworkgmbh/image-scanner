@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 using core.exporters;
 using core.images;
@@ -37,11 +36,7 @@ namespace webapp
             switch (scannerConfiguration.Scanner)
             {
                 case TrivyConfiguration trivy:
-                    return new Trivy(trivy.CachePath)
-                    {
-                        Registries = trivy.Registries,
-                        TrivyBinaryPath = trivy.BinaryPath,
-                    };
+                    return new Trivy(trivy.CachePath, trivy.BinaryPath, trivy.Registries);
                 default:
                     throw new NotImplementedException("At the moment only trivy scanner is supported");
             }

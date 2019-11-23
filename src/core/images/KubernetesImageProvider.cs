@@ -3,13 +3,14 @@ using System.Threading.Tasks;
 
 using core.core;
 
-using SharpCompress;
+using Serilog;
 
 namespace core.images
 {
     public class KubernetesImageProvider : IImageProvider
     {
-        private readonly Lazy<Task<KubeClient>> kubeClientTask;
+        private static readonly ILogger Logger = Log.ForContext<KubernetesImageProvider>();
+        private readonly SharpCompress.Lazy<Task<KubeClient>> kubeClientTask;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KubernetesImageProvider"/> class.
@@ -17,7 +18,7 @@ namespace core.images
         /// <param name="kubeConfigPath">Path to kube-config file.</param>
         public KubernetesImageProvider(string kubeConfigPath)
         {
-            this.kubeClientTask = new Lazy<Task<KubeClient>>(() => KubeClient.CreateAsync(kubeConfigPath));
+            this.kubeClientTask = new SharpCompress.Lazy<Task<KubeClient>>(() => InitKubeClient(kubeConfigPath));
         }
 
         /// <inheritdoc />
@@ -30,6 +31,12 @@ namespace core.images
             var images = await kubeClient.GetImages();
 
             return images;
+        }
+
+        private static async Task<KubeClient> InitKubeClient(string kubeConfigPath)
+        {
+            Logger.Information("Initializing Kube client");
+            return await KubeClient.CreateAsync(kubeConfigPath);
         }
     }
 }

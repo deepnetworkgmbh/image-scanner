@@ -58,6 +58,11 @@
             The paralellization degree.
             </summary>
         </member>
+        <member name="P:webapp.Configuration.KubeScannerConfiguration.Buffer">
+            <summary>
+            The buffer size.
+            </summary>
+        </member>
         <member name="P:webapp.Configuration.KubeScannerConfiguration.KubeConfigPath">
             <summary>
             Path to kube config.
@@ -118,7 +123,7 @@
             Entry point to trigger new image scans.
             </summary>
         </member>
-        <member name="M:webapp.Controllers.ScanController.#ctor(webapp.Configuration.ConfigurationParser,core.images.KubernetesImageProvider,webapp.KubeScannerFactory)">
+        <member name="M:webapp.Controllers.ScanController.#ctor(core.KubeScanner,core.images.KubernetesImageProvider)">
             <summary>
             Initializes a new instance of the <see cref="T:webapp.Controllers.ScanController"/> class.
             </summary>
