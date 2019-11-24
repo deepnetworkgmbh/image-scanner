@@ -55,7 +55,7 @@ namespace core.scanners
 
         public async Task<ImageScanDetails> Scan(ContainerImage image)
         {
-            Logger.Information("{Image} can was started", image);
+            Logger.Information("{Image} was started", image);
 
             // set the scan result file name
             var scanResultFile = ScanResultsFolder + CreateRandomFileName("/result-", 6);
@@ -117,7 +117,7 @@ namespace core.scanners
                 }
                 else
                 {
-                    Logger.Error("{Image} can succeeded", image);
+                    Logger.Error("{Image} was succeeded", image);
 
                     result.ScanResult = ScanResult.Succeeded;
                     result.Payload = scanOutput;

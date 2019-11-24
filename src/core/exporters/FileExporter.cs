@@ -6,10 +6,14 @@ using System.Threading.Tasks;
 using core.core;
 using core.helpers;
 
+using Serilog;
+
 namespace core.exporters
 {
     public class FileExporter : IExporter
     {
+        private static readonly ILogger Logger = Log.ForContext<FileExporter>();
+
         private readonly string folderPath;
 
         public bool IsBulkUpload { get; set; }
@@ -57,6 +61,8 @@ namespace core.exporters
             var resultPath = Path.Combine(this.folderPath, $"{img}.json");
             var jsonResult = JsonSerializerWrapper.Serialize(result);
             await File.WriteAllTextAsync(resultPath, jsonResult);
+
+            Logger.Information("{Image} scanning result was written to {FileName}", result.Image.FullName, resultPath);
         }
     }
 }
