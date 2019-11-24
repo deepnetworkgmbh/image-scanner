@@ -38,7 +38,7 @@ namespace webapp.Controllers
             try
             {
                 var count = await this.scanner.Scan(this.imageProvider);
-                return this.StatusCode(201, $"Enqueued {count} images to scan");
+                return this.StatusCode(202, $"Enqueued {count} images to scan");
             }
             catch (Exception ex)
             {
@@ -59,7 +59,7 @@ namespace webapp.Controllers
             {
                 var inMemoryProvider = new InMemoryImageProvider(images);
                 var count = await this.scanner.Scan(inMemoryProvider);
-                return this.StatusCode(201, $"Enqueued {count} images to scan");
+                return this.StatusCode(202, $"Enqueued {count} images to scan");
             }
             catch (Exception ex)
             {
