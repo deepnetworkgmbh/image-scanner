@@ -8,3 +8,4 @@
 **/obj
 **/.toolstarget
 **/scan-results/*.json
+**/.cache/

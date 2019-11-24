@@ -330,3 +330,5 @@ ASALocalRun/
 .mfractor/
 
 **/scan-results/*.json
+
+**/.cache/
