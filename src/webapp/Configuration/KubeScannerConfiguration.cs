@@ -16,9 +16,9 @@
         public int Buffer { get; set; }
 
         /// <summary>
-        /// Path to kube config.
+        /// The Kubernetes related options.
         /// </summary>
-        public string KubeConfigPath { get; set; }
+        public KubernetesConfiguration Kube { get; set; }
 
         /// <summary>
         /// The scanner configuration.

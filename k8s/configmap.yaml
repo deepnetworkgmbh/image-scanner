@@ -7,7 +7,12 @@ data:
     # Configuration values can be set as key-value properties
     parallelization: 10
     buffer: 1000
-    kubeConfigPath: /usr/.kube/kubeconfig
+
+    kube:
+      configPath: /usr/.kube/kubeconfig
+      namespaces:
+        - default
+        - operations
     
     scanner:
       !trivy-scanner

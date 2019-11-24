@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using k8s;
+
 using Serilog;
 
 namespace core.core
@@ -25,7 +26,7 @@ namespace core.core
             return kubeClient.InitializeAsync(kubeConfigStr);
         }
 
-        public async Task<IEnumerable<ContainerImage>> GetImages()
+        public async Task<IEnumerable<ContainerImage>> GetImages(params string[] namespaces)
         {
             try
             {
@@ -35,14 +36,32 @@ namespace core.core
                 // get the pod list
                 var podList = await kubeClient.ListPodForAllNamespacesAsync();
 
-                var containers = podList
-                    .Items
+                var pods = podList.Items;
+
+                if (namespaces?.Length > 0)
+                {
+                    if (namespaces.Contains("default"))
+                    {
+                        pods = podList
+                            .Items
+                            .Where(p => namespaces.Contains(p.Metadata.NamespaceProperty) || string.IsNullOrEmpty(p.Metadata.NamespaceProperty))
+                            .ToArray();
+                    }
+                    else
+                    {
+                        pods = podList
+                            .Items
+                            .Where(p => namespaces.Contains(p.Metadata.NamespaceProperty))
+                            .ToArray();
+                    }
+                }
+
+                var containers = pods
                     .Where(pod => pod.Spec.Containers != null)
                     .SelectMany(pod => pod.Spec.Containers, (pod, container) => container?.Image)
                     .Select(ContainerImage.FromFullName);
 
-                var initContainers = podList
-                    .Items
+                var initContainers = pods
                     .Where(pod => pod.Spec.InitContainers != null)
                     .SelectMany(pod => pod.Spec.InitContainers, (pod, container) => container.Image)
                     .Select(ContainerImage.FromFullName);
@@ -51,6 +70,12 @@ namespace core.core
                     .Concat(initContainers)
                     .Distinct()
                     .ToList();
+
+                Logger.Information(
+                        "Returning {ImageCount} unique images from {PodsCount} pods across {Namespaces} namespaces",
+                        images.Count,
+                        pods.Count,
+                        namespaces != null ? string.Join(',', namespaces) : "all");
 
                 return images;
             }

@@ -48,6 +48,21 @@
             Path to the folder with Scan Results.
             </summary>
         </member>
+        <member name="T:webapp.Configuration.KubernetesConfiguration">
+            <summary>
+            Represents Kubernetes configuration.
+            </summary>
+        </member>
+        <member name="P:webapp.Configuration.KubernetesConfiguration.ConfigPath">
+            <summary>
+            Path to kube config.
+            </summary>
+        </member>
+        <member name="P:webapp.Configuration.KubernetesConfiguration.Namespaces">
+            <summary>
+            Array of namespaces to get images from.
+            </summary>
+        </member>
         <member name="T:webapp.Configuration.KubeScannerConfiguration">
             <summary>
             The application configuration.
@@ -63,9 +78,9 @@
             The buffer size.
             </summary>
         </member>
-        <member name="P:webapp.Configuration.KubeScannerConfiguration.KubeConfigPath">
+        <member name="P:webapp.Configuration.KubeScannerConfiguration.Kube">
             <summary>
-            Path to kube config.
+            The Kubernetes related options.
             </summary>
         </member>
         <member name="P:webapp.Configuration.KubeScannerConfiguration.Scanner">
@@ -219,12 +234,6 @@
             Gets importer implementation.
             </summary>
             <returns>At the moment, only file is supported, so returns File Importer object.</returns>
-        </member>
-        <member name="M:webapp.KubeScannerFactory.GetKubeImageProvider">
-            <summary>
-            Returns a new instance of <see cref="T:core.images.KubernetesImageProvider"/> class.
-            </summary>
-            <returns>KubernetesImageProvider instance.</returns>
         </member>
         <member name="T:webapp.Models.TrivyScanResultFull">
             <summary>

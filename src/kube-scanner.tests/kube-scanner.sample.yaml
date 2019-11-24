@@ -1,6 +1,11 @@
 ﻿parallelization: 10
 buffer: 1000
-kubeConfigPath: /usr/local/.kube
+
+kube:
+    configPath: /usr/local/.kube
+    namespaces:
+      - default
+      - operations
 
 scanner:
   !trivy-scanner

@@ -72,7 +72,7 @@ namespace webapp
             services.AddSingleton(provider =>
             {
                 var config = provider.GetService<ConfigurationParser>().Get();
-                return new KubernetesImageProvider(config.KubeConfigPath);
+                return new KubernetesImageProvider(config.Kube.ConfigPath, config.Kube.Namespaces);
             });
 
             services.AddSwaggerGen(c =>

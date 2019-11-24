@@ -1,7 +1,6 @@
 ﻿using System;
 
 using core.exporters;
-using core.images;
 using core.importers;
 using core.scanners;
 
@@ -33,13 +32,11 @@ namespace webapp
         {
             var scannerConfiguration = this.configuration.Get();
 
-            switch (scannerConfiguration.Scanner)
+            return scannerConfiguration.Scanner switch
             {
-                case TrivyConfiguration trivy:
-                    return new Trivy(trivy.CachePath, trivy.BinaryPath, trivy.Registries);
-                default:
-                    throw new NotImplementedException("At the moment only trivy scanner is supported");
-            }
+                TrivyConfiguration trivy => new Trivy(trivy.CachePath, trivy.BinaryPath, trivy.Registries),
+                _ => throw new NotImplementedException("At the moment only trivy scanner is supported")
+            };
         }
 
         /// <summary>
@@ -70,16 +67,6 @@ namespace webapp
                 FileImporterConfiguration fileImporterConfiguration => new FileImporter(fileImporterConfiguration.Path),
                 _ => throw new NotImplementedException("At the moment only file importer is supported")
             };
-        }
-
-        /// <summary>
-        /// Returns a new instance of <see cref="KubernetesImageProvider"/> class.
-        /// </summary>
-        /// <returns>KubernetesImageProvider instance.</returns>
-        public KubernetesImageProvider GetKubeImageProvider()
-        {
-            var scannerConfiguration = this.configuration.Get();
-            return new KubernetesImageProvider(scannerConfiguration.KubeConfigPath);
         }
     }
 }
