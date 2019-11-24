@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using core;
 using core.exporters;
 using core.images;
-using core.importers;
 using core.scanners;
 
 using Microsoft.AspNetCore.Builder;
@@ -11,10 +10,10 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
+using webapp.BackgroundWorkers;
 using webapp.Configuration;
 using webapp.Infrastructure;
 
@@ -55,14 +54,15 @@ namespace webapp
 
             services
                 .AddHealthChecks()
-                .AddCheck("Ready", () => HealthCheckResult.Healthy(), new[] { "liveness" });
+                .AddCheck("Live", () => StateManager.Live, new[] { "liveness" })
+                .AddCheck("Ready", () => StateManager.Ready, new[] { "readiness" });
 
             services.AddSingleton<ConfigurationParser>();
             services.AddSingleton<KubeScannerFactory>();
             services.AddTransient(provider => provider.GetService<KubeScannerFactory>().GetScanner());
             services.AddTransient(provider => provider.GetService<KubeScannerFactory>().GetExporter());
             services.AddTransient(provider => provider.GetService<KubeScannerFactory>().GetImporter());
-            services.AddSingleton<KubeScanner>(provider =>
+            services.AddSingleton(provider =>
             {
                 var config = provider.GetService<ConfigurationParser>().Get();
                 var scanner = provider.GetService<IScanner>();
@@ -74,6 +74,7 @@ namespace webapp
                 var config = provider.GetService<ConfigurationParser>().Get();
                 return new KubernetesImageProvider(config.Kube.ConfigPath, config.Kube.Namespaces);
             });
+            services.AddHostedService<TrivyDbUpdater>();
 
             services.AddSwaggerGen(c =>
             {

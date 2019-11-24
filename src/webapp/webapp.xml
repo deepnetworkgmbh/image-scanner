@@ -4,6 +4,23 @@
         <name>webapp</name>
     </assembly>
     <members>
+        <member name="T:webapp.BackgroundWorkers.TrivyDbUpdater">
+            <summary>
+            Updated Trivy database every hour.
+            </summary>
+        </member>
+        <member name="M:webapp.BackgroundWorkers.TrivyDbUpdater.#ctor(core.scanners.IScanner)">
+            <summary>
+            Initializes a new instance of the <see cref="T:webapp.BackgroundWorkers.TrivyDbUpdater"/> class.
+            </summary>
+            <param name="scanner">Scanner instance.</param>
+        </member>
+        <member name="M:webapp.BackgroundWorkers.TrivyDbUpdater.StartAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:webapp.BackgroundWorkers.TrivyDbUpdater.StopAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:webapp.Configuration.ConfigurationParser">
             <summary>
             Parse YAML based application configuration.
@@ -205,6 +222,31 @@
             <param name="start">Ticks on a start.</param>
             <param name="stop">Ticks in the end.</param>
             <returns>Elapsed milliseconds.</returns>
+        </member>
+        <member name="T:webapp.Infrastructure.StateManager">
+            <summary>
+            Keeps the state of Kube Scanner service.
+            </summary>
+        </member>
+        <member name="M:webapp.Infrastructure.StateManager.SetReady">
+            <summary>
+            switches the service into ready-to-receive-traffic state.
+            </summary>
+        </member>
+        <member name="M:webapp.Infrastructure.StateManager.SetLive">
+            <summary>
+            Switches the service into Live state.
+            </summary>
+        </member>
+        <member name="P:webapp.Infrastructure.StateManager.Ready">
+            <summary>
+            Indicates if service is ready to receive external traffic.
+            </summary>
+        </member>
+        <member name="P:webapp.Infrastructure.StateManager.Live">
+            <summary>
+            Indicates if service requires a restart.
+            </summary>
         </member>
         <member name="T:webapp.KubeScannerFactory">
             <summary>

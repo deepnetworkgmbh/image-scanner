@@ -139,6 +139,29 @@ namespace core.scanners
             }
         }
 
+        public async Task UpdateDb()
+        {
+            Logger.Information("Trivy db update started");
+
+            try
+            {
+                var processStartInfo = new ProcessStartInfo
+                {
+                    FileName = this.trivyBinaryPath,
+                    Arguments = $"--cache-dir {this.cachePath}",
+                };
+
+                var processResults = await ProcessEx.RunAsync(processStartInfo);
+
+                Logger.Information("Trivy db update was finished with exit code {ExitCode} in {ProcessingTime}", processResults.ExitCode, processResults.RunTime);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Trivy db update failed");
+                throw;
+            }
+        }
+
         private static string CreateRandomFileName(string prefix, int length)
         {
             var random = new Random();
