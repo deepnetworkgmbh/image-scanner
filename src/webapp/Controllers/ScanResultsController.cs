@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 
 using core.core;
 using core.helpers;
@@ -35,7 +37,7 @@ namespace webapp.Controllers
         /// <returns>Scan results.</returns>
         [HttpGet]
         [Route("trivy")]
-        public async Task<IEnumerable<TrivyScanResultShort>> ScanImages([FromQuery]string[] images)
+        public async Task<IEnumerable<TrivyScanResultShort>> GetShortImageScanResults([FromQuery]string[] images)
         {
             // TODO: try to scan images in real-time?
             var containerImages = images.Select(ContainerImage.FromFullName).ToArray();
@@ -47,21 +49,33 @@ namespace webapp.Controllers
                 {
                     if (sd.ScanResult == ScanResult.Succeeded)
                     {
-                        var targets = JsonSerializerWrapper.Deserialize<TrivyScanTarget[]>(sd.Payload);
-
-                        var counters = targets
-                            .Where(i => i.Vulnerabilities != null)
-                            .SelectMany(i => i.Vulnerabilities)
-                            .GroupBy(i => i.Severity)
-                            .Select(i => new VulnerabilityCounters { Severity = i.Key, Count = i.Count() })
-                            .ToArray();
-
-                        return new TrivyScanResultShort
+                        try
                         {
-                            Image = sd.Image.FullName,
-                            ScanResult = sd.ScanResult,
-                            Counters = counters,
-                        };
+                            var targets = JsonSerializerWrapper.Deserialize<TrivyScanTarget[]>(sd.Payload);
+
+                            var counters = targets
+                                .Where(i => i.Vulnerabilities != null)
+                                .SelectMany(i => i.Vulnerabilities)
+                                .GroupBy(i => i.Severity)
+                                .Select(i => new VulnerabilityCounters { Severity = i.Key, Count = i.Count() })
+                                .ToArray();
+
+                            return new TrivyScanResultShort
+                            {
+                                Image = sd.Image.FullName,
+                                ScanResult = sd.ScanResult,
+                                Counters = counters,
+                            };
+                        }
+                        catch (Exception)
+                        {
+                            return new TrivyScanResultShort
+                            {
+                                Image = sd.Image.FullName,
+                                ScanResult = ScanResult.Failed,
+                                Description = "Corrupted content",
+                            };
+                        }
                     }
 
                     return new TrivyScanResultShort
@@ -83,10 +97,11 @@ namespace webapp.Controllers
         /// <returns>Scan results.</returns>
         [HttpGet]
         [Route("trivy/{image}")]
-        public async Task<ObjectResult> ScanImage([FromRoute]string image)
+        public async Task<ObjectResult> GetImageScanResult([FromRoute]string image)
         {
             // TODO: try to scan images in real-time?
-            var containerImage = ContainerImage.FromFullName(image);
+            var decodedTag = HttpUtility.UrlDecode(image);
+            var containerImage = ContainerImage.FromFullName(decodedTag);
 
             var result = (await this.factory.GetImporter().Get(containerImage)).FirstOrDefault();
 

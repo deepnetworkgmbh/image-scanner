@@ -90,7 +90,7 @@ namespace core.scanners
                 var processResults = await ProcessEx.RunAsync(processStartInfo);
 
                 var scanOutput = processResults.ExitCode != 0
-                    ? "{}"
+                    ? "[]"
                     : JArray.Parse(File.ReadAllText(@scanResultFile)).ToString();
 
                 Logger
