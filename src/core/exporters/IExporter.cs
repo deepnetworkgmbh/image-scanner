@@ -9,7 +9,5 @@ namespace core.exporters
         Task UploadAsync(ImageScanDetails details);
 
         Task UploadBulkAsync(IEnumerable<ImageScanDetails> results);
-
-        bool IsBulkUpload { get; set; }
     }
 }

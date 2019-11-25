@@ -6,6 +6,7 @@ using System.Threading.Tasks.Dataflow;
 using core.core;
 using core.exporters;
 using core.images;
+using core.importers;
 using core.scanners;
 using Serilog;
 
@@ -15,13 +16,17 @@ namespace core
     {
         private static readonly ILogger Logger = Log.ForContext<KubeScanner>();
 
+        private readonly IImporter importer;
+
         private readonly TransformBlock<ContainerImage, ImageScanDetails> scannerBlock;
         private readonly ActionBlock<ImageScanDetails> exporterBlock;
 
         private readonly Timer logWriter;
 
-        public KubeScanner(IScanner scanner, IExporter exporter, int parallelismDegree, int bufferSize)
+        public KubeScanner(IScanner scanner, IExporter exporter, IImporter importer, int parallelismDegree, int bufferSize)
         {
+            this.importer = importer;
+
             // create the pipeline of actions
             this.scannerBlock = new TransformBlock<ContainerImage, ImageScanDetails>(
                 scanner.Scan,
@@ -54,30 +59,39 @@ namespace core
 
         public async Task<int> Scan(IImageProvider images)
         {
-            var counter = 0;
             try
             {
                 var containerImages = (await images.GetImages()).ToArray();
+                var imageScanDetails =
+                    (await this.importer.Get(containerImages))
+                    .Where(i => i.ScanResult != ScanResult.NotFound)
+                    .ToDictionary(i => i.Image);
 
-                Logger.Information("Scanning {ImageCount} images", containerImages.Length);
+                var now = DateTime.UtcNow;
+                var imagesToScan = containerImages
+                    .Where(img => !imageScanDetails.TryGetValue(img, out var details) || (now - details.Timestamp).Hours > 12)
+                    .ToArray();
 
-                foreach (var image in containerImages)
+                Logger.Information(
+                    "{UpToDateImages} scan results are up to date. Scanning {ImagesToScan}",
+                    containerImages.Length - imagesToScan.Length,
+                    imagesToScan.Length);
+
+                foreach (var image in imagesToScan)
                 {
                     await this.scannerBlock.SendAsync(image);
-                    counter++;
                 }
 
                 this.logWriter.Change(TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
 
-                Logger.Information("Finished enqueueing {ImageCount} images", containerImages.Length);
+                Logger.Information("Finished enqueueing {ImageCount} images", imagesToScan.Length);
+                return imagesToScan.Length;
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to scan images");
                 throw;
             }
-
-            return counter;
         }
 
         public async Task Complete()

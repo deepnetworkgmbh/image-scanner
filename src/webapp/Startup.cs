@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using core;
 using core.exporters;
 using core.images;
+using core.importers;
 using core.scanners;
 
 using Microsoft.AspNetCore.Builder;
@@ -67,7 +68,8 @@ namespace webapp
                 var config = provider.GetService<ConfigurationParser>().Get();
                 var scanner = provider.GetService<IScanner>();
                 var exporter = provider.GetService<IExporter>();
-                return new KubeScanner(scanner, exporter, config.Parallelization, config.Buffer);
+                var importer = provider.GetService<IImporter>();
+                return new KubeScanner(scanner, exporter, importer, config.Parallelization, config.Buffer);
             });
             services.AddSingleton(provider =>
             {

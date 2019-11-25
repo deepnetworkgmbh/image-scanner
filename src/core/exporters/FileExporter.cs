@@ -16,8 +16,6 @@ namespace core.exporters
 
         private readonly string folderPath;
 
-        public bool IsBulkUpload { get; set; }
-
         public FileExporter(string folderPath)
         {
             // if folder path is not provided, use default folder
