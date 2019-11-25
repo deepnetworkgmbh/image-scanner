@@ -68,7 +68,7 @@ spec:
           - name: kube-scanner-parameters-volume
             mountPath: /kube-scanner
           - name: storage-volume
-            mountPath: "/storage"
+            mountPath: "/app/.cache"
         env:
           - name: KUBE_SCANNER_CONFIG_FILE_PATH
             value: "/kube-scanner/kube-scanner-parameters.yaml"

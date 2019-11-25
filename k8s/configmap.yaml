@@ -17,7 +17,7 @@ data:
     scanner:
       !trivy-scanner
       binaryPath: /usr/local/bin/trivy
-      cachePath: /storage/.trivycache
+      cachePath: /app/.cache/.trivy
       registries:
         - name: myacr.azurecr.io
           address: myacr.azurecr.io
@@ -30,8 +30,8 @@ data:
     
     exporter:
       !file-exporter
-      path: /storage/scan-results/
+      path: /app/.cache/scan-results/
     
     importer:
       !file-importer
-      path: /storage/scan-results/
+      path: /app/.cache/scan-results/
