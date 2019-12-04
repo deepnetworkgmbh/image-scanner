@@ -19,7 +19,7 @@ namespace webapp.Configuration
         private static readonly ILogger Logger = Log.ForContext<ConfigurationParser>();
         private static readonly IDeserializer Deserializer;
 
-        private readonly Lazy<KubeScannerConfiguration> kubeScannerConfig;
+        private readonly Lazy<ImageScannerConfiguration> imageScannerConfig;
 
         static ConfigurationParser()
         {
@@ -38,22 +38,22 @@ namespace webapp.Configuration
         /// <param name="configuration">The application configuration object.</param>
         public ConfigurationParser(IConfiguration configuration)
         {
-            const string envVarName = "KUBE_SCANNER_CONFIG_FILE_PATH";
+            const string envVarName = "IMAGE_SCANNER_CONFIG_FILE_PATH";
             var configFilePath = configuration[envVarName];
 
             if (string.IsNullOrEmpty(configFilePath))
             {
-                Logger.Fatal("There is no KUBE_SCANNER_CONFIG_FILE_PATH environment variable with Kube Scanner config filepath");
+                Logger.Fatal("There is no IMAGE_SCANNER_CONFIG_FILE_PATH environment variable with Image Scanner config filepath");
                 throw new Exception(envVarName);
             }
 
             if (!File.Exists(configFilePath))
             {
-                Logger.Fatal("Kube Scanner config file does not exist at {ConfigFilePath}", configFilePath);
-                throw new Exception($"Kube Scanner config file does not exist at {configFilePath}");
+                Logger.Fatal("Image Scanner config file does not exist at {ConfigFilePath}", configFilePath);
+                throw new Exception($"Image Scanner config file does not exist at {configFilePath}");
             }
 
-            this.kubeScannerConfig = new Lazy<KubeScannerConfiguration>(() => this.Init(configFilePath));
+            this.imageScannerConfig = new Lazy<ImageScannerConfiguration>(() => this.Init(configFilePath));
         }
 
         /// <summary>
@@ -61,22 +61,22 @@ namespace webapp.Configuration
         /// </summary>
         /// <param name="input">String representation of YAML file.</param>
         /// <returns>The application configuration object.</returns>
-        public static KubeScannerConfiguration Parse(string input)
+        public static ImageScannerConfiguration Parse(string input)
         {
-            return Deserializer.Deserialize<KubeScannerConfiguration>(input);
+            return Deserializer.Deserialize<ImageScannerConfiguration>(input);
         }
 
         /// <summary>
         /// Parses Scanner Config on the first request and cache the result in memory.
         /// </summary>
-        /// <returns>Kube Scanner configuration object.</returns>
-        public KubeScannerConfiguration Get()
+        /// <returns>Image Scanner configuration object.</returns>
+        public ImageScannerConfiguration Get()
         {
-            return this.kubeScannerConfig.Value;
+            return this.imageScannerConfig.Value;
         }
 
         // Parse the application configuration file.
-        private KubeScannerConfiguration Init(string configFilePath)
+        private ImageScannerConfiguration Init(string configFilePath)
         {
             var configString = File.ReadAllText(configFilePath);
 

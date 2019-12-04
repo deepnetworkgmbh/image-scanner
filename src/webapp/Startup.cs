@@ -59,17 +59,17 @@ namespace webapp
                 .AddCheck("Ready", () => StateManager.Ready, new[] { "readiness" });
 
             services.AddSingleton<ConfigurationParser>();
-            services.AddSingleton<KubeScannerFactory>();
-            services.AddTransient(provider => provider.GetService<KubeScannerFactory>().GetScanner());
-            services.AddTransient(provider => provider.GetService<KubeScannerFactory>().GetExporter());
-            services.AddTransient(provider => provider.GetService<KubeScannerFactory>().GetImporter());
+            services.AddSingleton<ImageScannerFactory>();
+            services.AddTransient(provider => provider.GetService<ImageScannerFactory>().GetScanner());
+            services.AddTransient(provider => provider.GetService<ImageScannerFactory>().GetExporter());
+            services.AddTransient(provider => provider.GetService<ImageScannerFactory>().GetImporter());
             services.AddSingleton(provider =>
             {
                 var config = provider.GetService<ConfigurationParser>().Get();
                 var scanner = provider.GetService<IScanner>();
                 var exporter = provider.GetService<IExporter>();
                 var importer = provider.GetService<IImporter>();
-                return new KubeScanner(scanner, exporter, importer, config.Parallelization, config.Buffer);
+                return new ImageScanner(scanner, exporter, importer, config.Parallelization, config.Buffer);
             });
             services.AddSingleton(provider =>
             {

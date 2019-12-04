@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kube-scanner
+  name: image-scanner
   labels:
-    app: kube-scanner
-    module: kube-scanner
+    app: image-scanner
+    module: image-scanner
     version: '0.2'
 spec:
   replicas: 1
@@ -16,17 +16,17 @@ spec:
   minReadySeconds: 5
   selector:
     matchLabels:
-      app: kube-scanner
+      app: image-scanner
   template:
     metadata:
       labels:
-        app: kube-scanner
-        module: kube-scanner
+        app: image-scanner
+        module: image-scanner
         version: '0.2'
     spec:
       containers:
-      - name: kube-scanner
-        image: deepnetwork/kube-scanner-webapp:0.2
+      - name: image-scanner
+        image: deepnetwork/image-scanner-webapp:0.2
         imagePullPolicy: Always
         resources:
           requests:
@@ -65,13 +65,13 @@ spec:
         volumeMounts:
           - name: kube-config-file-volume
             mountPath: /usr/.kube
-          - name: kube-scanner-parameters-volume
-            mountPath: /kube-scanner
+          - name: image-scanner-parameters-volume
+            mountPath: /image-scanner
           - name: storage-volume
             mountPath: "/app/.cache"
         env:
-          - name: KUBE_SCANNER_CONFIG_FILE_PATH
-            value: "/kube-scanner/kube-scanner-parameters.yaml"
+          - name: IMAGE_SCANNER_CONFIG_FILE_PATH
+            value: "/image-scanner/image-scanner-parameters.yaml"
       securityContext:
         fsGroup: 10001
       volumes:
@@ -79,10 +79,10 @@ spec:
           configMap:
             name: kube-config-file-configmap
             defaultMode: 0777
-        - name: kube-scanner-parameters-volume
+        - name: image-scanner-parameters-volume
           configMap:
-            name: kube-scanner-parameters-configmap
+            name: image-scanner-parameters-configmap
             defaultMode: 0777
         - name: storage-volume
           persistentVolumeClaim:
-            claimName: kube-scanner-storage
+            claimName: image-scanner-storage

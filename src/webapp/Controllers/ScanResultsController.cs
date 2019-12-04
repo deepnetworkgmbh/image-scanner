@@ -20,12 +20,12 @@ namespace webapp.Controllers
     [Route("scan-results")]
     public class ScanResultsController : ControllerBase
     {
-        private readonly KubeScannerFactory factory;
+        private readonly ImageScannerFactory factory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ScanResultsController"/> class.
         /// </summary>
-        public ScanResultsController(KubeScannerFactory factory)
+        public ScanResultsController(ImageScannerFactory factory)
         {
             this.factory = factory;
         }

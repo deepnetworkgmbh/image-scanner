@@ -25,7 +25,7 @@ namespace core.scanners
             // create scan results folder if not already exists
             ScanResultsFolder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                ".kube-scanner",
+                ".image-scanner",
                 "trivy-scan-results");
 
             if (!Directory.Exists(ScanResultsFolder))
@@ -39,7 +39,7 @@ namespace core.scanners
             if (string.IsNullOrEmpty(cachePath))
             {
                 cachePath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) +
-                            "/.kube-scanner/.trivycache";
+                            "/.image-scanner/.trivycache";
             }
 
             if (!Directory.Exists(cachePath))

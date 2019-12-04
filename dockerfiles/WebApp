@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/core/sdk:3.0.101-alpine3.10 AS build
 WORKDIR /app/src
 COPY /src .
-RUN dotnet build kube-scanner.sln -c Release
+RUN dotnet build image-scanner.sln -c Release
 
 FROM build AS publish
 WORKDIR /app/src
@@ -17,7 +17,7 @@ COPY /trivy/trivy /usr/local/bin/trivy
 ENV ASPNETCORE_URLS="http://*:8080"
 EXPOSE 8080
 
-ENV USER=kube-scanner-webapp
+ENV USER=image-scanner-webapp
 ENV UID=10001
 ENV GID=10001
 RUN addgroup "$USER" --gid "$GID" \

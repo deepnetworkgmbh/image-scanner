@@ -43,7 +43,7 @@
             <summary>
             Parses Scanner Config on the first request and cache the result in memory.
             </summary>
-            <returns>Kube Scanner configuration object.</returns>
+            <returns>Image Scanner configuration object.</returns>
         </member>
         <member name="T:webapp.Configuration.FileExporterConfiguration">
             <summary>
@@ -65,52 +65,37 @@
             Path to the folder with Scan Results.
             </summary>
         </member>
-        <member name="T:webapp.Configuration.KubernetesConfiguration">
-            <summary>
-            Represents Kubernetes configuration.
-            </summary>
-        </member>
-        <member name="P:webapp.Configuration.KubernetesConfiguration.ConfigPath">
-            <summary>
-            Path to kube config.
-            </summary>
-        </member>
-        <member name="P:webapp.Configuration.KubernetesConfiguration.Namespaces">
-            <summary>
-            Array of namespaces to get images from.
-            </summary>
-        </member>
-        <member name="T:webapp.Configuration.KubeScannerConfiguration">
+        <member name="T:webapp.Configuration.ImageScannerConfiguration">
             <summary>
             The application configuration.
             </summary>
         </member>
-        <member name="P:webapp.Configuration.KubeScannerConfiguration.Parallelization">
+        <member name="P:webapp.Configuration.ImageScannerConfiguration.Parallelization">
             <summary>
             The paralellization degree.
             </summary>
         </member>
-        <member name="P:webapp.Configuration.KubeScannerConfiguration.Buffer">
+        <member name="P:webapp.Configuration.ImageScannerConfiguration.Buffer">
             <summary>
             The buffer size.
             </summary>
         </member>
-        <member name="P:webapp.Configuration.KubeScannerConfiguration.Kube">
+        <member name="P:webapp.Configuration.ImageScannerConfiguration.Kube">
             <summary>
             The Kubernetes related options.
             </summary>
         </member>
-        <member name="P:webapp.Configuration.KubeScannerConfiguration.Scanner">
+        <member name="P:webapp.Configuration.ImageScannerConfiguration.Scanner">
             <summary>
             The scanner configuration.
             </summary>
         </member>
-        <member name="P:webapp.Configuration.KubeScannerConfiguration.Exporter">
+        <member name="P:webapp.Configuration.ImageScannerConfiguration.Exporter">
             <summary>
             The Scan Result exporter configuration.
             </summary>
         </member>
-        <member name="P:webapp.Configuration.KubeScannerConfiguration.Importer">
+        <member name="P:webapp.Configuration.ImageScannerConfiguration.Importer">
             <summary>
             The Scan Result importer configuration.
             </summary>
@@ -128,6 +113,21 @@
         <member name="T:webapp.Configuration.IImporterConfiguration">
             <summary>
             The base interface for all types of importers configuration.
+            </summary>
+        </member>
+        <member name="T:webapp.Configuration.KubernetesConfiguration">
+            <summary>
+            Represents Kubernetes configuration.
+            </summary>
+        </member>
+        <member name="P:webapp.Configuration.KubernetesConfiguration.ConfigPath">
+            <summary>
+            Path to kube config.
+            </summary>
+        </member>
+        <member name="P:webapp.Configuration.KubernetesConfiguration.Namespaces">
+            <summary>
+            Array of namespaces to get images from.
             </summary>
         </member>
         <member name="T:webapp.Configuration.TrivyConfiguration">
@@ -155,7 +155,7 @@
             Entry point to trigger new image scans.
             </summary>
         </member>
-        <member name="M:webapp.Controllers.ScanController.#ctor(core.KubeScanner,core.images.KubernetesImageProvider)">
+        <member name="M:webapp.Controllers.ScanController.#ctor(core.ImageScanner,core.images.KubernetesImageProvider)">
             <summary>
             Initializes a new instance of the <see cref="T:webapp.Controllers.ScanController"/> class.
             </summary>
@@ -178,24 +178,53 @@
             Provides scan results.
             </summary>
         </member>
-        <member name="M:webapp.Controllers.ScanResultsController.#ctor(webapp.KubeScannerFactory)">
+        <member name="M:webapp.Controllers.ScanResultsController.#ctor(webapp.ImageScannerFactory)">
             <summary>
             Initializes a new instance of the <see cref="T:webapp.Controllers.ScanResultsController"/> class.
             </summary>
         </member>
-        <member name="M:webapp.Controllers.ScanResultsController.ScanImages(System.String[])">
+        <member name="M:webapp.Controllers.ScanResultsController.GetShortImageScanResults(System.String[])">
             <summary>
             Returns scan results for requested images.
             </summary>
             <param name="images">Array of image tags.</param>
             <returns>Scan results.</returns>
         </member>
-        <member name="M:webapp.Controllers.ScanResultsController.ScanImage(System.String)">
+        <member name="M:webapp.Controllers.ScanResultsController.GetImageScanResult(System.String)">
             <summary>
             Returns scan result for requested image.
             </summary>
             <param name="image">The image tag.</param>
             <returns>Scan results.</returns>
+        </member>
+        <member name="T:webapp.ImageScannerFactory">
+            <summary>
+            Helps instantiating correct Scanner, Exporter and Importer implementations based on the application configuration.
+            </summary>
+        </member>
+        <member name="M:webapp.ImageScannerFactory.#ctor(webapp.Configuration.ConfigurationParser)">
+            <summary>
+            Initializes a new instance of the <see cref="T:webapp.ImageScannerFactory"/> class.
+            </summary>
+            <param name="configuration">the application configuration.</param>
+        </member>
+        <member name="M:webapp.ImageScannerFactory.GetScanner">
+            <summary>
+            Gets scanner implementation.
+            </summary>
+            <returns>At the moment, only trivy is supported, so returns Trivy scanner object.</returns>
+        </member>
+        <member name="M:webapp.ImageScannerFactory.GetExporter">
+            <summary>
+            Gets exporter implementation.
+            </summary>
+            <returns>At the moment, only file is supported, so returns File Exporter object.</returns>
+        </member>
+        <member name="M:webapp.ImageScannerFactory.GetImporter">
+            <summary>
+            Gets importer implementation.
+            </summary>
+            <returns>At the moment, only file is supported, so returns File Importer object.</returns>
         </member>
         <member name="T:webapp.Infrastructure.HttpRequestLoggingMiddleware">
             <summary>
@@ -225,7 +254,7 @@
         </member>
         <member name="T:webapp.Infrastructure.StateManager">
             <summary>
-            Keeps the state of Kube Scanner service.
+            Keeps the state of Image Scanner service.
             </summary>
         </member>
         <member name="M:webapp.Infrastructure.StateManager.SetReady">
@@ -247,35 +276,6 @@
             <summary>
             Indicates if service requires a restart.
             </summary>
-        </member>
-        <member name="T:webapp.KubeScannerFactory">
-            <summary>
-            Helps instantiating correct Scanner, Exporter and Importer implementations based on the application configuration.
-            </summary>
-        </member>
-        <member name="M:webapp.KubeScannerFactory.#ctor(webapp.Configuration.ConfigurationParser)">
-            <summary>
-            Initializes a new instance of the <see cref="T:webapp.KubeScannerFactory"/> class.
-            </summary>
-            <param name="configuration">the application configuration.</param>
-        </member>
-        <member name="M:webapp.KubeScannerFactory.GetScanner">
-            <summary>
-            Gets scanner implementation.
-            </summary>
-            <returns>At the moment, only trivy is supported, so returns Trivy scanner object.</returns>
-        </member>
-        <member name="M:webapp.KubeScannerFactory.GetExporter">
-            <summary>
-            Gets exporter implementation.
-            </summary>
-            <returns>At the moment, only file is supported, so returns File Exporter object.</returns>
-        </member>
-        <member name="M:webapp.KubeScannerFactory.GetImporter">
-            <summary>
-            Gets importer implementation.
-            </summary>
-            <returns>At the moment, only file is supported, so returns File Importer object.</returns>
         </member>
         <member name="T:webapp.Models.TrivyScanResultFull">
             <summary>

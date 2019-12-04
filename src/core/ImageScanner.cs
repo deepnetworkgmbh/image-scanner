@@ -12,9 +12,9 @@ using Serilog;
 
 namespace core
 {
-    public class KubeScanner : IDisposable, IAsyncDisposable
+    public class ImageScanner : IDisposable, IAsyncDisposable
     {
-        private static readonly ILogger Logger = Log.ForContext<KubeScanner>();
+        private static readonly ILogger Logger = Log.ForContext<ImageScanner>();
 
         private readonly IImporter importer;
 
@@ -23,7 +23,7 @@ namespace core
 
         private readonly Timer logWriter;
 
-        public KubeScanner(IScanner scanner, IExporter exporter, IImporter importer, int parallelismDegree, int bufferSize)
+        public ImageScanner(IScanner scanner, IExporter exporter, IImporter importer, int parallelismDegree, int bufferSize)
         {
             this.importer = importer;
 
@@ -96,7 +96,7 @@ namespace core
 
         public async Task Complete()
         {
-            Logger.Information("Completing KubeScanner");
+            Logger.Information("Completing ImageScanner");
 
             this.scannerBlock.Complete();
 

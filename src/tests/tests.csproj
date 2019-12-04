@@ -2,17 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-    <RootNamespace>kube_scanner.tests</RootNamespace>
+    <RootNamespace>tests</RootNamespace>
 
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="kube-scanner.sample.yaml" />
+    <None Remove="image-scanner.config-sample.yaml" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="kube-scanner.sample.yaml">
+    <Content Include="image-scanner.config-sample.yaml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

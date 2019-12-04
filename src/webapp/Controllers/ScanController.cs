@@ -15,13 +15,13 @@ namespace webapp.Controllers
     [Route("scan")]
     public class ScanController : ControllerBase
     {
-        private readonly KubeScanner scanner;
+        private readonly ImageScanner scanner;
         private readonly KubernetesImageProvider imageProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ScanController"/> class.
         /// </summary>
-        public ScanController(KubeScanner scanner, KubernetesImageProvider imageProvider)
+        public ScanController(ImageScanner scanner, KubernetesImageProvider imageProvider)
         {
             this.scanner = scanner;
             this.imageProvider = imageProvider;

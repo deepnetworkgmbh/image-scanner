@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: kube-scanner-storage
+  name: image-scanner-storage
 spec:
   accessModes:
     - ReadWriteOnce

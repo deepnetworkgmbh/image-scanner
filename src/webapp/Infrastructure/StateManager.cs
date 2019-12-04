@@ -3,7 +3,7 @@
 namespace webapp.Infrastructure
 {
     /// <summary>
-    /// Keeps the state of Kube Scanner service.
+    /// Keeps the state of Image Scanner service.
     /// </summary>
     public static class StateManager
     {

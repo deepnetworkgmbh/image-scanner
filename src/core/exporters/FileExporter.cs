@@ -23,7 +23,7 @@ namespace core.exporters
             {
                 this.folderPath = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                    ".kube-scanner",
+                    ".image-scanner",
                     "exports");
             }
             else

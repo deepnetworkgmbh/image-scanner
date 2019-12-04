@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "core", "core\core.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "webapp", "webapp\webapp.csproj", "{2E3E6E34-BD1C-4904-A1DA-33F2AB16A2CC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kube-scanner.tests", "kube-scanner.tests\kube-scanner.tests.csproj", "{D8E755F5-92D4-4D18-8D3D-775B21B60199}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tests", "tests\tests.csproj", "{D8E755F5-92D4-4D18-8D3D-775B21B60199}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -6,7 +6,7 @@ using NUnit.Framework;
 
 using webapp.Configuration;
 
-namespace kube_scanner.tests
+namespace tests
 {
     [TestFixture]
     public class YamlConfigTests
@@ -15,7 +15,7 @@ namespace kube_scanner.tests
         public void HappyPath()
         {
             // Arrange
-            var stringConfig = File.ReadAllText("./kube-scanner.sample.yaml");
+            var stringConfig = File.ReadAllText("./image-scanner.config-sample.yaml");
 
             // Act
             var config = ConfigurationParser.Parse(stringConfig);

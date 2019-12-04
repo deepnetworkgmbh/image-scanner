@@ -11,15 +11,15 @@ namespace webapp
     /// <summary>
     /// Helps instantiating correct Scanner, Exporter and Importer implementations based on the application configuration.
     /// </summary>
-    public class KubeScannerFactory
+    public class ImageScannerFactory
     {
         private readonly ConfigurationParser configuration;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="KubeScannerFactory"/> class.
+        /// Initializes a new instance of the <see cref="ImageScannerFactory"/> class.
         /// </summary>
         /// <param name="configuration">the application configuration.</param>
-        public KubeScannerFactory(ConfigurationParser configuration)
+        public ImageScannerFactory(ConfigurationParser configuration)
         {
             this.configuration = configuration;
         }

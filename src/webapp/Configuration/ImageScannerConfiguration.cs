@@ -3,7 +3,7 @@
     /// <summary>
     /// The application configuration.
     /// </summary>
-    public class KubeScannerConfiguration
+    public class ImageScannerConfiguration
     {
         /// <summary>
         /// The paralellization degree.

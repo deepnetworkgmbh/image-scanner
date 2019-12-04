@@ -27,7 +27,7 @@ namespace core.importers
             {
                 folderPath = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                    ".kube-scanner",
+                    ".image-scanner",
                     "exports");
             }
 

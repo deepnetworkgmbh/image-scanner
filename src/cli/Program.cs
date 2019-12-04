@@ -69,8 +69,8 @@ namespace cli
 
             var scanner = new Trivy(trivyOptions.TrivyCachePath, trivyOptions.TrivyBinaryPath, registries);
 
-            using var kubeScanner = new KubeScanner(scanner, exporter, importer, trivyOptions.ParallelismDegree, 1000);
-            await kubeScanner.Scan(imageProvider);
+            using var imageScanner = new ImageScanner(scanner, exporter, importer, trivyOptions.ParallelismDegree, 1000);
+            await imageScanner.Scan(imageProvider);
         }
 
         private static IExporter InitializeExporter(GlobalOptions options)
