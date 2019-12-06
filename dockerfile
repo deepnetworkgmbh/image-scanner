@@ -1,15 +1,36 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0.101-alpine3.10 AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1.100-alpine3.10 AS build
 WORKDIR /app/src
 COPY /src .
 RUN dotnet build image-scanner.sln -c Release
 
-FROM build AS publish
+
+FROM build AS testrunner
+WORKDIR /app/src/tests
+ENTRYPOINT ["dotnet","test","--logger:trx;LogFileName=test_results.xml","--no-build","-c","Release","-r","/app/testresults"]
+
+
+FROM build AS publish-cli
+WORKDIR /app/src
+RUN dotnet publish cli/cli.csproj -c Release -o /app/publish --no-restore --no-build
+
+
+FROM mcr.microsoft.com/dotnet/core/runtime:3.1.0-alpine3.10 AS cliapp
+WORKDIR /app
+COPY --from=publish-cli /app/publish .
+
+COPY /trivy/trivy /usr/local/bin/trivy
+
+ENTRYPOINT ["dotnet","cli.dll"]
+
+
+FROM build AS publish-webapp
 WORKDIR /app/src
 RUN dotnet publish webapp/webapp.csproj -c Release -o /app/publish --no-restore --no-build
 
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.0.1-alpine3.10 AS final
+
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1.0-alpine3.10 AS webapp
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=publish-webapp /app/publish .
 
 COPY /trivy/trivy /usr/local/bin/trivy
 
