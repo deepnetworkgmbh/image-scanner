@@ -19,7 +19,7 @@ jobs:
         dotnet-version: 3.0.100
 
     - name: Test the app
-      run: dotnet test --logger:trx;LogFileName=test_results.xml --results-directory ./testresults
+      run: dotnet test --logger 'trx;LogFileName=test_results.xml' --results-directory ./testresults
       working-directory: ./src
 
     - name: publish test results
