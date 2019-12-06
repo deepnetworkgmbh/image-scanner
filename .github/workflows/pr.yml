@@ -6,7 +6,7 @@ on:
     - master
 
 jobs:
-  build:
+  validate-pr:
 
     runs-on: ubuntu-latest
 

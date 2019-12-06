@@ -8,7 +8,7 @@ on:
     - version
 
 jobs:
-  build:
+  build-n-release:
     env:
       WEBAPP_FILE: webapp.tar
       CLIAPP_FILE: cliapp.tar

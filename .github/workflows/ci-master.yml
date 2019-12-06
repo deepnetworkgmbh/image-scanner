@@ -9,7 +9,7 @@ on:
     - 'src/**'
 
 jobs:
-  build:
+  build-n-push:
     env:
       SHA8: ${GITHUB_SHA::8}
       WEBAPP_FILE: webapp.tar
