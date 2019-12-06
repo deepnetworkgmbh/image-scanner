@@ -1,0 +1,80 @@
+name: ci-master
+
+on: 
+  push:
+    branches:
+    - master
+
+jobs:
+  build-n-push:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Set env vars
+      run: |
+        base_tag=$(cat ./version)
+        SHA8=$(echo $GITHUB_SHA | cut -c1-8)
+        webapp_tag="deepnetwork/image-scanner-web:$base_tag-$SHA8"
+        cliapp_tag="deepnetwork/image-scanner-cli:$base_tag-$SHA8"
+        echo "::set-env name=WEBAPP_TAG::$webapp_tag"
+        echo "::set-env name=CLIAPP_TAG::$cliapp_tag"
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.0.100
+
+    - name: Test the app
+      run: dotnet test --logger 'trx;LogFileName=test_results.xml' --results-directory ./testresults
+      working-directory: ./src
+
+    - name: publish test results
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: test_results
+        path: ./src/testresults/test_results.xml
+
+    - name: lint WebApp dockerfile
+      uses: brpaz/hadolint-action@v1.0.2
+      with:
+        dockerfile: ./dockerfiles/WebApp
+
+    - name: lint ConsoleApp dockerfile
+      uses: brpaz/hadolint-action@v1.0.2
+      with:
+        dockerfile: ./dockerfiles/ConsoleApp
+
+    - name: build WebApp dockerimage
+      run: |
+        docker build -t ${{ env.WEBAPP_TAG }} -f dockerfiles/WebApp .
+
+    - name: scan WebApp for CVEs
+      uses: 'docker://aquasec/trivy:0.2.1'
+      with:
+        args: --exit-code 1 --severity HIGH,CRITICAL ${{ env.WEBAPP_TAG }}
+
+    - name: build ConsoleApp dockerimage
+      run: |
+        docker build -t ${{ env.CLIAPP_TAG }} -f dockerfiles/ConsoleApp .
+
+    - name: scan ConsoleApp for CVEs
+      uses: 'docker://aquasec/trivy:0.2.1'
+      with:
+        args: --exit-code 1 --severity HIGH,CRITICAL ${{ env.CLIAPP_TAG }}
+
+    - name: Docker Login
+      uses: Azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: push WebApp dockerimage
+      run: |
+        docker push ${{ env.WEBAPP_TAG }}
+
+    - name: push ConsoleApp dockerimage
+      run: |
+        docker push ${{ env.CLIAPP_TAG }}

@@ -1,0 +1,105 @@
+name: release
+
+on: 
+  push:
+    branches:
+    - master
+    paths:
+    - version
+
+jobs:
+  build-n-release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Set env vars
+      run: |
+        base_tag=$(cat ./version)
+        webapp_tag="deepnetwork/image-scanner-web:$base_tag"
+        cliapp_tag="deepnetwork/image-scanner-cli:$base_tag"
+        echo "::set-env name=TAG::$base_tag"
+        echo "::set-env name=WEBAPP_TAG::$webapp_tag"
+        echo "::set-env name=WEBAPP_TAG_LATEST::deepnetwork/image-scanner-web:latest"
+        echo "::set-env name=CLIAPP_TAG::$cliapp_tag"
+        echo "::set-env name=CLIAPP_TAG_LATEST::deepnetwork/image-scanner-cli:latest"
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.0.100
+
+    - name: Test the app
+      run: dotnet test --logger 'trx;LogFileName=test_results.xml' --results-directory ./testresults
+      working-directory: ./src
+
+    - name: publish test results
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: test_results
+        path: ./src/testresults/test_results.xml
+
+    - name: lint WebApp dockerfile
+      uses: brpaz/hadolint-action@v1.0.2
+      with:
+        dockerfile: ./dockerfiles/WebApp
+
+    - name: lint ConsoleApp dockerfile
+      uses: brpaz/hadolint-action@v1.0.2
+      with:
+        dockerfile: ./dockerfiles/ConsoleApp
+
+    - name: build WebApp dockerimage
+      run: |
+        docker build -t ${{ env.WEBAPP_TAG }} -f dockerfiles/WebApp .
+        docker tag ${{ env.WEBAPP_TAG }} ${{ env.WEBAPP_TAG_LATEST }}
+
+    - name: scan WebApp for CVEs
+      uses: 'docker://aquasec/trivy:0.2.1'
+      with:
+        args: --exit-code 1 --severity HIGH,CRITICAL ${{ env.WEBAPP_TAG }}
+
+    - name: build ConsoleApp dockerimage
+      run: |
+        docker build -t ${{ env.CLIAPP_TAG }} -f dockerfiles/ConsoleApp .
+        docker tag ${{ env.CLIAPP_TAG }} ${{ env.CLIAPP_TAG_LATEST }}
+
+    - name: scan ConsoleApp for CVEs
+      uses: 'docker://aquasec/trivy:0.2.1'
+      with:
+        args: --exit-code 1 --severity HIGH,CRITICAL ${{ env.CLIAPP_TAG }}
+
+    - name: Docker Login
+      uses: Azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: push WebApp dockerimage
+      run: |
+        docker push ${{ env.WEBAPP_TAG }}
+        docker push ${{ env.WEBAPP_TAG_LATEST }}
+
+    - name: push ConsoleApp dockerimage
+      run: |
+        docker push ${{ env.CLIAPP_TAG }}
+        docker push ${{ env.CLIAPP_TAG_LATEST }}
+
+    - name: tag the repo
+      uses: hole19/git-tag-action@master
+      env:
+        TAG: ${{ env.TAG }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.TAG }}
+        release_name: Release ${{ env.TAG }}
+        body: 
+        draft: false
+        prerelease: true

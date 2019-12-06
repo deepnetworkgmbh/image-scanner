@@ -1,0 +1,44 @@
+name: validate_pull_request
+
+on: 
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  validate-pr:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.0.100
+
+    - name: Test the app
+      run: dotnet test --logger 'trx;LogFileName=test_results.xml' --results-directory ./testresults
+      working-directory: ./src
+
+    - name: publish test results
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: test_results
+        path: ./src/testresults/test_results.xml
+
+    - name: lint WebApp dockerfile
+      uses: brpaz/hadolint-action@v1.0.2
+      with:
+        dockerfile: ./dockerfiles/WebApp
+
+    - name: lint ConsoleApp dockerfile
+      uses: brpaz/hadolint-action@v1.0.2
+      with:
+        dockerfile: ./dockerfiles/ConsoleApp
+
+    - name: lint k8s files
+      uses: stefanprodan/kube-tools@v1.2.0
+      with:
+        command: kubeval -d ./k8s

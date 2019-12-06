@@ -1,5 +1,7 @@
 # image-scanner
 
+![Build status](https://github.com/deepnetworkgmbh/image-scanner/workflows/ci-master/badge.svg)
+
 `image-scanner` can scan a bunch of docker images for CVEs and serve scan results. It can run as web-application or as cli tool.
 
 The scanner can audit images in a given Kubernetes cluster, or receive the list of tags as input parameter.
