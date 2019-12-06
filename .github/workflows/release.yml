@@ -10,11 +10,6 @@ on:
 jobs:
   build:
     env:
-      TAG: ${{ cat ./version }}
-      WEBAPP_TAG: ${{ format('deepnetwork/image-scanner-web:{0}', env.TAG) }}
-      WEBAPP_TAG_LATEST: 'deepnetwork/image-scanner-web:latest'
-      CLIAPP_TAG: ${{ format('deepnetwork/image-scanner-cli:{0}', env.TAG) }}
-      CLIAPP_TAG_LATEST: 'deepnetwork/image-scanner-cli:latest'
       WEBAPP_FILE: webapp.tar
       CLIAPP_FILE: cliapp.tar
 
@@ -22,6 +17,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+
+    - name: Set env vars
+      run: |
+        base_tag=$(cat ./version)
+        webapp_tag="deepnetwork/image-scanner-web:$base_tag"
+        cliapp_tag="deepnetwork/image-scanner-cli:$base_tag"
+        echo "::set-env name=TAG::$base_tag"
+        echo "::set-env name=WEBAPP_TAG::$webapp_tag"
+        echo "::set-env name=WEBAPP_TAG_LATEST::deepnetwork/image-scanner-web:latest"
+        echo "::set-env name=CLIAPP_TAG::$cliapp_tag"
+        echo "::set-env name=CLIAPP_TAG_LATEST::deepnetwork/image-scanner-cli:latest"
 
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
