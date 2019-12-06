@@ -1,0 +1,36 @@
+  
+version: 1
+
+update_configs:
+  - package_manager: "dotnet:nuget"
+    directory: "/src"
+    update_schedule: "weekly"
+    target_branch: "master"
+    default_reviewers:
+    - v1r7u
+    - ahmddp
+    commit_message:
+      prefix: "fix"
+      include_scope: true
+
+  - package_manager: "docker"
+    directory: "/"
+    update_schedule: "weekly"
+    target_branch: "master"
+    default_reviewers:
+    - v1r7u
+    - ahmddp
+    commit_message:
+      prefix: "fix"
+      include_scope: true
+
+  - package_manager: "github_actions"
+    directory: "/"
+    update_schedule: "weekly"
+    target_branch: "master"
+    default_reviewers:
+    - v1r7u
+    - ahmddp
+    commit_message:
+      prefix: "chore"
+      include_scope: true
