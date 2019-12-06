@@ -4,9 +4,6 @@ on:
   push:
     branches:
     - master
-    paths:
-    - 'dockerfiles/**'
-    - 'src/**'
 
 jobs:
   build-n-push:
