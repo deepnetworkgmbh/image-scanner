@@ -1,6 +1,7 @@
 # image-scanner
 
 ![Build status](https://github.com/deepnetworkgmbh/image-scanner/workflows/ci-master/badge.svg)
+[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=deepnetworkgmbh/image-scanner)](https://dependabot.com)
 
 `image-scanner` can scan a bunch of docker images for CVEs and serve scan results. It can run as web-application or as cli tool.
 
