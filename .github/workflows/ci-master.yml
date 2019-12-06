@@ -22,48 +22,45 @@ jobs:
         echo "::set-env name=WEBAPP_TAG::$webapp_tag"
         echo "::set-env name=CLIAPP_TAG::$cliapp_tag"
 
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.0.100
+        tests_tag="deepnetwork/image-scanner:$base_tag-$SHA8-tests"
+        tests_dir="$HOME/testresults"
+        echo "::set-env name=TESTS_TAG::$tests_tag"
+        echo "::set-env name=TESTS_DIR::$tests_dir"
 
-    - name: Test the app
-      run: dotnet test --logger 'trx;LogFileName=test_results.xml' --results-directory ./testresults
-      working-directory: ./src
+    - name: run unit-tests
+      run: |
+        docker build -t ${{ env.TESTS_TAG }} -f ./dockerfile --target testrunner .
+        sudo mkdir -p ${{ env.TESTS_DIR }}
+        docker run --rm --mount type=bind,source=${{ env.TESTS_DIR }},target=/app/testresults ${{ env.TESTS_TAG }}
 
     - name: publish test results
       uses: actions/upload-artifact@v1.0.0
       with:
         name: test_results
-        path: ./src/testresults/test_results.xml
+        path: '${{ env.TESTS_DIR }}/test_results.xml'
 
-    - name: lint WebApp dockerfile
+    - name: lint dockerfile
       uses: brpaz/hadolint-action@v1.0.2
       with:
-        dockerfile: ./dockerfiles/WebApp
-
-    - name: lint ConsoleApp dockerfile
-      uses: brpaz/hadolint-action@v1.0.2
-      with:
-        dockerfile: ./dockerfiles/ConsoleApp
-
-    - name: build WebApp dockerimage
-      run: |
-        docker build -t ${{ env.WEBAPP_TAG }} -f dockerfiles/WebApp .
-
-    - name: scan WebApp for CVEs
-      uses: 'docker://aquasec/trivy:0.2.1'
-      with:
-        args: --exit-code 1 --severity HIGH,CRITICAL ${{ env.WEBAPP_TAG }}
+        dockerfile: ./dockerfile
 
     - name: build ConsoleApp dockerimage
       run: |
-        docker build -t ${{ env.CLIAPP_TAG }} -f dockerfiles/ConsoleApp .
+        docker build -t ${{ env.CLIAPP_TAG }} -f ./dockerfile --target cliapp .
 
     - name: scan ConsoleApp for CVEs
       uses: 'docker://aquasec/trivy:0.2.1'
       with:
         args: --exit-code 1 --severity HIGH,CRITICAL ${{ env.CLIAPP_TAG }}
+
+    - name: build WebApp dockerimage
+      run: |
+        docker build -t ${{ env.WEBAPP_TAG }} -f ./dockerfile --target webapp .
+
+    - name: scan WebApp for CVEs
+      uses: 'docker://aquasec/trivy:0.2.1'
+      with:
+        args: --exit-code 1 --severity HIGH,CRITICAL ${{ env.WEBAPP_TAG }}
 
     - name: Docker Login
       uses: Azure/docker-login@v1

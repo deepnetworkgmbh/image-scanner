@@ -13,30 +13,30 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.0.100
+    - name: Set env vars
+      run: |
+        SHA8=$(echo $GITHUB_SHA | cut -c1-8)
+        tests_tag="deepnetwork/image-scanner:$SHA8-tests"
+        tests_dir="$HOME/testresults"
+        echo "::set-env name=TESTS_TAG::$tests_tag"
+        echo "::set-env name=TESTS_DIR::$tests_dir"
 
-    - name: Test the app
-      run: dotnet test --logger 'trx;LogFileName=test_results.xml' --results-directory ./testresults
-      working-directory: ./src
+    - name: run unit-tests
+      run: |
+        docker build -t ${{ env.TESTS_TAG }} -f ./dockerfile --target testrunner .
+        sudo mkdir -p ${{ env.TESTS_DIR }}
+        docker run --rm --mount type=bind,source=${{ env.TESTS_DIR }},target=/app/testresults ${{ env.TESTS_TAG }}
 
     - name: publish test results
       uses: actions/upload-artifact@v1.0.0
       with:
         name: test_results
-        path: ./src/testresults/test_results.xml
+        path: '${{ env.TESTS_DIR }}/test_results.xml'
 
-    - name: lint WebApp dockerfile
+    - name: lint dockerfile
       uses: brpaz/hadolint-action@v1.0.2
       with:
-        dockerfile: ./dockerfiles/WebApp
-
-    - name: lint ConsoleApp dockerfile
-      uses: brpaz/hadolint-action@v1.0.2
-      with:
-        dockerfile: ./dockerfiles/ConsoleApp
+        dockerfile: ./dockerfile
 
     - name: lint k8s files
       uses: stefanprodan/kube-tools@v1.2.0
