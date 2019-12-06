@@ -1,0 +1,83 @@
+name: ci-master
+
+on: 
+  push:
+    branches:
+    - master
+    paths:
+    - 'dockerfiles/**'
+    - 'src/**'
+
+jobs:
+  build:
+    env:
+      BASE_TAG: ${{ cat ./version }}
+      SHA8: ${GITHUB_SHA::8}
+      WEBAPP_TAG: ${{ format('deepnetwork/image-scanner-web:{0}-{1}', env.BASE_TAG, env.SHA8) }}
+      CLIAPP_TAG: ${{ format('deepnetwork/image-scanner-cli:{0}-{1}', env.BASE_TAG, env.SHA8) }}
+      WEBAPP_FILE: webapp.tar
+      CLIAPP_FILE: cliapp.tar
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.0.100
+
+    - name: Test the app
+      run: dotnet test --logger:trx;LogFileName=test_results.xml --configuration Release --results-directory ./testresults
+      working-directory: ./src
+
+    - name: publish test results
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: test_results
+        path: ./src/testresults/test_results.xml
+
+    - name: lint WebApp dockerfile
+      uses: brpaz/hadolint-action@v1.0.2
+      with:
+        dockerfile: ./dockerfiles/WebApp
+
+    - name: lint ConsoleApp dockerfile
+      uses: brpaz/hadolint-action@v1.0.2
+      with:
+        dockerfile: ./dockerfiles/ConsoleApp
+
+    - name: build WebApp dockerimage
+      run: |
+        docker build -t $WEBAPP_TAG -f dockerfiles/WebApp .
+        docker save $WEBAPP_TAG > $WEBAPP_FILE
+
+    - name: scan WebApp for CVEs
+      uses: 'docker://aquasec/trivy:0.2.1'
+      with:
+        args: --exit-code 1 --severity HIGH,CRITICAL --input $WEBAPP_FILE
+
+    - name: build ConsoleApp dockerimage
+      run: |
+        docker build -t $CLIAPP_TAG -f dockerfiles/ConsoleApp .
+        docker save $CLIAPP_TAG > $CLIAPP_FILE
+
+    - name: scan ConsoleApp for CVEs
+      uses: 'docker://aquasec/trivy:0.2.1'
+      with:
+        args: --exit-code 1 --severity HIGH,CRITICAL --input $CLIAPP_FILE
+
+    - name: Docker Login
+      uses: Azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: push WebApp dockerimage
+      run: |
+        docker push $WEBAPP_TAG
+
+    - name: push ConsoleApp dockerimage
+      run: |
+        docker push $CLIAPP_TAG

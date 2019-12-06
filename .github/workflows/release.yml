@@ -1,0 +1,104 @@
+name: release
+
+on: 
+  push:
+    branches:
+    - master
+    paths:
+    - version
+
+jobs:
+  build:
+    env:
+      TAG: ${{ cat ./version }}
+      WEBAPP_TAG: ${{ format('deepnetwork/image-scanner-web:{0}', env.TAG) }}
+      WEBAPP_TAG_LATEST: 'deepnetwork/image-scanner-web:latest'
+      CLIAPP_TAG: ${{ format('deepnetwork/image-scanner-cli:{0}', env.TAG) }}
+      CLIAPP_TAG_LATEST: 'deepnetwork/image-scanner-cli:latest'
+      WEBAPP_FILE: webapp.tar
+      CLIAPP_FILE: cliapp.tar
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.0.100
+
+    - name: Test the app
+      run: dotnet test --logger:trx;LogFileName=test_results.xml --configuration Release --results-directory ./testresults
+      working-directory: ./src
+
+    - name: publish test results
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: test_results
+        path: ./src/testresults/test_results.xml
+
+    - name: lint WebApp dockerfile
+      uses: brpaz/hadolint-action@v1.0.2
+      with:
+        dockerfile: ./dockerfiles/WebApp
+
+    - name: lint ConsoleApp dockerfile
+      uses: brpaz/hadolint-action@v1.0.2
+      with:
+        dockerfile: ./dockerfiles/ConsoleApp
+
+    - name: build WebApp dockerimage
+      run: |
+        docker build -t $WEBAPP_TAG -f dockerfiles/WebApp .
+        docker tag $WEBAPP_TAG $WEBAPP_TAG_LATEST
+        docker save $WEBAPP_TAG > $WEBAPP_FILE
+
+    - name: scan WebApp for CVEs
+      uses: 'docker://aquasec/trivy:0.2.1'
+      with:
+        args: --exit-code 1 --severity HIGH,CRITICAL --input $WEBAPP_FILE
+
+    - name: build ConsoleApp dockerimage
+      run: |
+        docker build -t $CLIAPP_TAG -f dockerfiles/ConsoleApp .
+        docker tag $CLIAPP_TAG $CLIAPP_TAG_LATEST
+        docker save $CLIAPP_TAG > $CLIAPP_FILE
+
+    - name: scan ConsoleApp for CVEs
+      uses: 'docker://aquasec/trivy:0.2.1'
+      with:
+        args: --exit-code 1 --severity HIGH,CRITICAL --input $CLIAPP_FILE
+
+    - name: Docker Login
+      uses: Azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: push WebApp dockerimage
+      run: |
+        docker push $WEBAPP_TAG
+        docker push $WEBAPP_TAG_LATEST
+
+    - name: push ConsoleApp dockerimage
+      run: |
+        docker push $CLIAPP_TAG
+        docker push $CLIAPP_TAG_LATEST
+
+    - name: tag the repo
+      uses: hole19/git-tag-action@master
+      env:
+        TAG: $TAG
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: $TAG
+        release_name: Release $TAG
+        body: 
+        draft: false
+        prerelease: true
