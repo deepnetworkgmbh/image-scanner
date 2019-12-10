@@ -5,7 +5,7 @@ metadata:
   labels:
     app: image-scanner
     module: image-scanner
-    version: '0.2'
+    version: '0.3.2'
 spec:
   replicas: 1
   strategy:
@@ -22,11 +22,11 @@ spec:
       labels:
         app: image-scanner
         module: image-scanner
-        version: '0.2'
+        version: '0.3.2'
     spec:
       containers:
       - name: image-scanner
-        image: deepnetwork/image-scanner-webapp:0.2
+        image: deepnetwork/image-scanner-web:0.3.2
         imagePullPolicy: Always
         resources:
           requests:
@@ -63,8 +63,6 @@ spec:
           runAsNonRoot: true
           readOnlyRootFilesystem: false
         volumeMounts:
-          - name: kube-config-file-volume
-            mountPath: /usr/.kube
           - name: image-scanner-parameters-volume
             mountPath: /image-scanner
           - name: storage-volume
@@ -75,10 +73,6 @@ spec:
       securityContext:
         fsGroup: 10001
       volumes:
-        - name: kube-config-file-volume
-          configMap:
-            name: kube-config-file-configmap
-            defaultMode: 0777
         - name: image-scanner-parameters-volume
           configMap:
             name: image-scanner-parameters-configmap
