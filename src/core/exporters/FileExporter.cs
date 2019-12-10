@@ -21,20 +21,18 @@ namespace core.exporters
             // if folder path is not provided, use default folder
             if (string.IsNullOrEmpty(folderPath))
             {
-                this.folderPath = Path.Combine(
+                folderPath = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                     ".image-scanner",
                     "exports");
-            }
-            else
-            {
-                this.folderPath = folderPath;
             }
 
             if (!Directory.Exists(folderPath))
             {
                 Directory.CreateDirectory(folderPath);
             }
+
+            this.folderPath = folderPath;
         }
 
         public async Task UploadAsync(ImageScanDetails details)

@@ -1,7 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-
+using cli.configuration;
 using cli.options;
 using CommandLine;
 
@@ -10,6 +11,7 @@ using core.exporters;
 using core.images;
 using core.importers;
 using core.scanners;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 using Parser = CommandLine.Parser;
 
@@ -28,7 +30,7 @@ namespace cli
                     .CreateLogger();
 
                 Parser.Default.ParseArguments<TrivyOptions, ClairOptions>(args)
-                    .WithParsed<TrivyOptions>(async options => await RunTrivy(options))
+                    .WithParsed<TrivyOptions>(options => RunTrivy(options).Wait())
                     .WithParsed<ClairOptions>(RunClair);
             }
             catch (NotImplementedException e)
@@ -52,20 +54,27 @@ namespace cli
         {
             var exporter = InitializeExporter(trivyOptions);
             var importer = InitializeImporter(trivyOptions);
+            IImageProvider imageProvider;
 
-            var imageProvider = new KubernetesImageProvider(trivyOptions.KubeConfigPath);
-
-            // set private container registry credentials
-            var registries = new RegistryCredentials[1];
-
-            var registry = new RegistryCredentials
+            // if a list of images is provided, scan the list. If not, scan the k8s cluster images
+            if (!string.IsNullOrEmpty(trivyOptions.ImagesListFilePath))
             {
-                Address = trivyOptions.ContainerRegistryAddress,
-                Username = trivyOptions.ContainerRegistryUserName,
-                Password = trivyOptions.ContainerRegistryPassword,
-            };
+                var images = File.ReadAllLines(trivyOptions.ImagesListFilePath);
+                imageProvider = new InMemoryImageProvider(images);
+            }
+            else
+            {
+                imageProvider = new KubernetesImageProvider(trivyOptions.KubeConfigPath);
+            }
 
-            registries.Append(registry);
+            // read private container registry credentials
+            var registries = new RegistryCredentials[1];
+            if (!string.IsNullOrEmpty(trivyOptions.RegistriesFilePath))
+            {
+                var registryConfig = new RegistryConfigurationParser(trivyOptions.RegistriesFilePath).Get();
+
+                registries = registryConfig.Registries;
+            }
 
             var scanner = new Trivy(trivyOptions.TrivyCachePath, trivyOptions.TrivyBinaryPath, registries);
 

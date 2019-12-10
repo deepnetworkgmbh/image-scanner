@@ -50,7 +50,22 @@ namespace core.scanners
             this.cachePath = cachePath;
             this.trivyBinaryPath = trivyBinaryPath;
 
-            this.registriesMap = registries.ToDictionary(i => i.Name);
+            var map = new Dictionary<string, RegistryCredentials>();
+
+            foreach (var r in registries)
+            {
+                if (r is null)
+                {
+                    continue;
+                }
+
+                if (!map.ContainsKey(r.Name))
+                {
+                    map.Add(r.Name, r);
+                }
+            }
+
+            this.registriesMap = map;
         }
 
         public async Task<ImageScanDetails> Scan(ContainerImage image)
