@@ -4,7 +4,7 @@ namespace cli.options
 {
     public abstract class GlobalOptions
     {
-        [Option('k', "kubeConfigPath", Required = false, HelpText = "File path of Kube Config file")]
+        [Option('k', "kubeConfigPath", Required = false, SetName = "KubeConfigPath", HelpText = "File path of Kube Config file")]
         public string KubeConfigPath { get; set; }
 
         [Option('e', "exporter", Required = true, HelpText = "Exporter type (e.g, File)")]
@@ -21,5 +21,8 @@ namespace cli.options
 
         [Option('m', "parallelismDegree", Required = false, Default = 10, HelpText = "Degree of Parallelism")]
         public int ParallelismDegree { get; set; }
+
+        [Option('l', "listOfImagesPath", Required = false, SetName = "ImagesListPath", HelpText = "The path of images list file")]
+        public string ImagesListFilePath { get; set; }
     }
 }
