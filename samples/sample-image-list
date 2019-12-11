@@ -1,0 +1,11 @@
+gcr.io/k8s-minikube/storage-provisioner:v1.8.1
+k8s.gcr.io/coredns:1.6.2
+k8s.gcr.io/etcd:3.3.15-0
+k8s.gcr.io/kube-addon-manager:v9.0.2
+k8s.gcr.io/kube-apiserver:v1.16.2
+k8s.gcr.io/kube-controller-manager:v1.16.2
+k8s.gcr.io/kube-proxy:v1.16.2
+k8s.gcr.io/kube-scheduler:v1.16.2
+kubernetesui/dashboard:v2.0.0-beta4
+kubernetesui/metrics-scraper:v1.0.1
+quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.26.1
