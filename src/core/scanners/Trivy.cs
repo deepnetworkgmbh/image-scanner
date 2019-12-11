@@ -50,22 +50,14 @@ namespace core.scanners
             this.cachePath = cachePath;
             this.trivyBinaryPath = trivyBinaryPath;
 
-            var map = new Dictionary<string, RegistryCredentials>();
+            this.registriesMap = new Dictionary<string, RegistryCredentials>();
 
-            foreach (var r in registries)
+            // != null verification is safety check against corrupted yaml configurations
+            foreach (var r in registries.Where(i => i != null))
             {
-                if (r is null)
-                {
-                    continue;
-                }
-
-                if (!map.ContainsKey(r.Name))
-                {
-                    map.Add(r.Name, r);
-                }
+                // TryAdd inserts new element to dictionary only if Key is a new entry
+                this.registriesMap.TryAdd(r.Name, r);
             }
-
-            this.registriesMap = map;
         }
 
         public async Task<ImageScanDetails> Scan(ContainerImage image)
