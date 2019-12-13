@@ -277,6 +277,33 @@
             Indicates if service requires a restart.
             </summary>
         </member>
+        <member name="T:webapp.Models.TrivyScanDescriptionNormalizer">
+            <summary>
+            The object normalizes trivy output.
+            </summary>
+        </member>
+        <member name="F:webapp.Models.TrivyScanDescriptionNormalizer.NotAuthorized">
+            <summary>
+            Human-friendly not-authorized message.
+            </summary>
+        </member>
+        <member name="F:webapp.Models.TrivyScanDescriptionNormalizer.UnknownOS">
+            <summary>
+            Human-friendly Unknown-OS message.
+            </summary>
+        </member>
+        <member name="F:webapp.Models.TrivyScanDescriptionNormalizer.UnknownError">
+            <summary>
+            Human-friendly Unknown-Error message.
+            </summary>
+        </member>
+        <member name="M:webapp.Models.TrivyScanDescriptionNormalizer.ToHumanReadable(System.String)">
+            <summary>
+            Converts trivy output to human-friendly text.
+            </summary>
+            <param name="description">Trivy scan output.</param>
+            <returns>Human readable result description.</returns>
+        </member>
         <member name="T:webapp.Models.TrivyScanResultFull">
             <summary>
             Represents detailed information about a single Trivy Scan Result.

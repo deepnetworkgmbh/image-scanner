@@ -125,7 +125,7 @@ namespace webapp.Controllers
                     {
                         Image = containerImage.FullName,
                         ScanResult = result.ScanResult,
-                        Description = result.Payload,
+                        Description = TrivyScanDescriptionNormalizer.ToHumanReadable(result.Payload),
                     });
             }
             else
