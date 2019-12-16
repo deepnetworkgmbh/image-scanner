@@ -150,6 +150,28 @@
             Array of Container Registry credentials.
             </summary>
         </member>
+        <member name="T:webapp.Controllers.CveController">
+            <summary>
+            Provides scan results.
+            </summary>
+        </member>
+        <member name="M:webapp.Controllers.CveController.#ctor(webapp.ImageScannerFactory)">
+            <summary>
+            Initializes a new instance of the <see cref="T:webapp.Controllers.CveController"/> class.
+            </summary>
+        </member>
+        <member name="M:webapp.Controllers.CveController.GetCveDetails(System.String)">
+            <summary>
+            Returns detailed CVE description and images, where it was used.
+            </summary>
+            <param name="id">The CVE identifier.</param>
+            <returns>CVE details.</returns>
+        </member>
+        <member name="M:webapp.Controllers.CveController.GetCveDetails">
+            <summary>
+            Returns CVEs overview.
+            </summary>
+        </member>
         <member name="T:webapp.Controllers.ScanController">
             <summary>
             Entry point to trigger new image scans.
@@ -327,66 +349,6 @@
         <member name="P:webapp.Models.TrivyScanResultFull.Targets">
             <summary>
             List of scanned targets.
-            </summary>
-        </member>
-        <member name="T:webapp.Models.TrivyScanTarget">
-            <summary>
-            List of vulnerabilities in the scanned target (OS and application packages).
-            </summary>
-        </member>
-        <member name="P:webapp.Models.TrivyScanTarget.Target">
-            <summary>
-            The target name. for example, OS name or ruby gems file.
-            </summary>
-        </member>
-        <member name="P:webapp.Models.TrivyScanTarget.Vulnerabilities">
-            <summary>
-            The list of found vulnerabilities.
-            </summary>
-        </member>
-        <member name="T:webapp.Models.TrivyVulnerabilityDescription">
-            <summary>
-            Single vulnerability details.
-            </summary>
-        </member>
-        <member name="P:webapp.Models.TrivyVulnerabilityDescription.VulnerabilityID">
-            <summary>
-            CVE name.
-            </summary>
-        </member>
-        <member name="P:webapp.Models.TrivyVulnerabilityDescription.PkgName">
-            <summary>
-            Package name, whenre CVE was discovered.
-            </summary>
-        </member>
-        <member name="P:webapp.Models.TrivyVulnerabilityDescription.InstalledVersion">
-            <summary>
-            The version of package in container.
-            </summary>
-        </member>
-        <member name="P:webapp.Models.TrivyVulnerabilityDescription.FixedVersion">
-            <summary>
-            the version of package, where the CVE was fixed.
-            </summary>
-        </member>
-        <member name="P:webapp.Models.TrivyVulnerabilityDescription.Title">
-            <summary>
-            Short CVE title.
-            </summary>
-        </member>
-        <member name="P:webapp.Models.TrivyVulnerabilityDescription.Description">
-            <summary>
-            Detailed CVE description.
-            </summary>
-        </member>
-        <member name="P:webapp.Models.TrivyVulnerabilityDescription.Severity">
-            <summary>
-            The severity.
-            </summary>
-        </member>
-        <member name="P:webapp.Models.TrivyVulnerabilityDescription.References">
-            <summary>
-            List of references with further information.
             </summary>
         </member>
         <member name="T:webapp.Models.TrivyScanResultShort">
