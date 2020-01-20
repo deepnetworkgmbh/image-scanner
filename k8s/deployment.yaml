@@ -5,7 +5,7 @@ metadata:
   labels:
     app: image-scanner
     module: image-scanner
-    version: '0.3.3'
+    version: '0.3.4'
 spec:
   replicas: 1
   strategy:
@@ -22,11 +22,11 @@ spec:
       labels:
         app: image-scanner
         module: image-scanner
-        version: '0.3.3'
+        version: '0.3.4'
     spec:
       containers:
       - name: image-scanner
-        image: deepnetwork/image-scanner-web:0.3.3
+        image: deepnetwork/image-scanner-web:0.3.4
         imagePullPolicy: Always
         resources:
           requests:
