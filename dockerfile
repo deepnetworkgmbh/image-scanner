@@ -14,7 +14,7 @@ WORKDIR /app/src
 RUN dotnet publish cli/cli.csproj -c Release -o /app/publish --no-restore --no-build
 
 
-FROM mcr.microsoft.com/dotnet/core/runtime:3.1.0-alpine3.10 AS cliapp
+FROM mcr.microsoft.com/dotnet/core/runtime:3.1.1-alpine3.10 AS cliapp
 WORKDIR /app
 COPY --from=publish-cli /app/publish .
 
