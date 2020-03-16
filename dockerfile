@@ -28,7 +28,7 @@ WORKDIR /app/src
 RUN dotnet publish webapp/webapp.csproj -c Release -o /app/publish --no-restore --no-build
 
 
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1.1-alpine3.10 AS webapp
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1.2-alpine3.10 AS webapp
 WORKDIR /app
 COPY --from=publish-webapp /app/publish .
 
