@@ -1,5 +1,7 @@
 # image-scanner
 
+:exclamation:**The project is ARCHIVED. We focused on [joseki](https://github.com/deepnetworkgmbh/joseki) instead**:exclamation:
+
 ![Build status](https://github.com/deepnetworkgmbh/image-scanner/workflows/ci-master/badge.svg)
 [![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=deepnetworkgmbh/image-scanner)](https://dependabot.com)
 
