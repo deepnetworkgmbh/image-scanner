@@ -1,0 +1,10 @@
+﻿!registries
+registries:
+  - name: deepnetwork
+    address: https://registry.hub.docker.com
+    username:
+    password:
+  - name: myacr.azurecr.io
+    address: myacr.azurecr.io
+    username: myacr
+    password: <MYACRPASSWD>

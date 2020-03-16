@@ -7,10 +7,25 @@
 
 The scanner can audit images in a given Kubernetes cluster, or receive the list of tags as input parameter.
 
-To scan all Kubernetes cluster images (**TODO:** review the command):
+To scan all Kubernetes cluster images:
+
+- default kube-config:
+
+    ```bash
+    docker run --rm -v $HOME:/root deepnetwork/image-scanner-cli trivy -e File -i File
+    ```
+
+- a custom k8s cluster: 
+    ```bash
+    docker run --rm -v $HOME:/root deepnetwork/image-scanner-cli trivy -e File -i File -k /root/.kube/custom_k8s_config
+    ```
+
+To scan a list of images:
+
+A sample image list can be found [here](samples/sample-image-list)
 
 ```bash
-docker run -v $HOME:/root deepnetwork/image-scanner trivy -e File
+docker run --rm -v $HOME:/root deepnetwork/image-scanner-cli trivy -e File -i File -l /root/Repos/image-scanner/samples/sample-image-list 
 ```
 
 At the moment, `image-scanner` support only [trivy](https://github.com/aquasecurity/trivy) as scanner and local file-system as persistence layer. Supporting another scanners and storage implementation is part of [the roadmap](./ROADMAP.md).
@@ -22,9 +37,9 @@ At the moment, `image-scanner` support only [trivy](https://github.com/aquasecur
 1. Running From source code
 
     ```bash
-    git clone <https://github.com/deepnetworkgmbh/image-scanner.git>
+    git clone https://github.com/deepnetworkgmbh/image-scanner.git
 
-    cd image-scanner/src
+    cd image-scanner/src/cli
 
     dotnet run
     ```
@@ -32,12 +47,18 @@ At the moment, `image-scanner` support only [trivy](https://github.com/aquasecur
 2. Running CLI via Docker image
 
     ```bash
-    docker run -v $HOME:/root/ deepnetwork/image-scanner
+    docker run --rm -v $HOME:/root deepnetwork/image-scanner-cli trivy -e File -i File
     ```
 
 3. Running Web application via Docker image
 
-    **TODO:** add example
+    ```bash
+    docker run --rm \
+            -p 8080:8080 \
+            -v $HOME:/$HOME deepnetwork/image-scanner-web \
+            -e IMAGE_SCANNER_CONFIG_FILE_PATH="$HOME/Repos/image-scanner/src/tests/image-scanner.config-sample.yaml"
+    ```
+    Then, navigate to http://localhost:8080/swagger/index.html address on your machine and run APIs to start scans.
 
 ## Web application
 
@@ -45,7 +66,7 @@ At the moment, `image-scanner` support only [trivy](https://github.com/aquasecur
 
 ## CLI
 
-**TODO:** add cli description and review examples below
+   The image-scanner CLI tool helps to scan a k8s cluster or a list of images. Following CLI options are used in scanning operations.
 
 ### Options
 
@@ -66,22 +87,26 @@ At the moment, `image-scanner` support only [trivy](https://github.com/aquasecur
 2. Trivy options:
 
     ```bash
+    -t, --trivyBinaryPath              Binary path of Trivy executable (Default: /usr/local/bin/trivy) 
+
     -a, --trivyCachePath               Folder path of Trivy cache files
-
-    -c, --containerRegistryAddress     Container Registry Address
-
-    -u, --containerRegistryUserName    Container Registry User Name
-
-    -p, --containerRegistryPassword    Container Registry User Password
+    
+    -r, --registries                   The path of Container Registry Credentials file    
 
     -k, --kubeConfigPath               File path of Kube Config file
 
     -e, --exporter                     Required. Exporter type (e.g, File)
+    
+    -i, --importer                     Required. Importer type (e.g, File)    
 
     -f, --fileExporterPath             Folder path of file exporter
+    
+    -b, --isBulkUpload                 Is bulk upload (Default: false)    
 
     -m, --parallelismDegree            (Default: 10) Degree of Parallelism
-
+    
+    -l, --listOfImagesPath             The path of images list file
+    
     --help                             Display this help screen.
 
     --version                          Display version information.
@@ -94,9 +119,9 @@ At the moment, `image-scanner` support only [trivy](https://github.com/aquasecur
     1. Scan a Kubernetes cluster using local kube-config and save outputs into file exporter:
 
         ```bash
-        docker run \
+        docker run --rm\
             -v $HOME:/root/ \
-            deepnetwork/image-scanner trivy -e File
+            deepnetwork/image-scanner-cli trivy -e File -i File
         ```
 
         Scan results (json) and container log files are saved under `$HOME/.image-scanner/exports` folder.
@@ -104,61 +129,43 @@ At the moment, `image-scanner` support only [trivy](https://github.com/aquasecur
     2. Using a cache directory on your machine:
 
         ```bash
-        docker run \
+        docker run --rm\
             -v $HOME:/root/ \
-            deepnetwork/image-scanner trivy -a [TRIVY_CACHE_PATH] -e File
+            deepnetwork/image-scanner-cli trivy -a [TRIVY_CACHE_PATH] -e File
         ```
 
         Replace [TRIVY_CACHE_PATH] with the cache directory on your machine.
 
     3. Running against a Private Container Registry (CR):
+    
+        Prepare your private CR list in a format like in this [file](samples/registries.config-sample.yaml)
 
         ```bash
-        docker run \
+        docker run --rm\
             -v $HOME:/root/ \
-            deepnetwork/image-scanner trivy -e File -c [CR_NAME] -u [CR_USER] -p [CR_USER_PASSWORD]
-        ```
-
-        Set following parameters to scan images from private container registry.
-
-        ```bash
-        -c, --containerRegistryAddress     Container Registry Address
-
-        -u, --containerRegistryUserName    Container Registry User Name
-
-        -p, --containerRegistryPassword    Container Registry User Password
-        ```
-
-        For example, to scan images from a private Azure Container Registry (ACR), you should provide parameters like this:
-
-        ```bash
-        -c [YOUR_ACR_NAME].azurecr.io
-        -u [YOUR_ACR_USER_NAME]
-        -p [YOUR_ACR_USER_PASSWORD]
+            deepnetwork/image-scanner-cli trivy -e File -i File -r /root/Repos/image-scanner/samples/registries.config-sample.yaml
         ```
 
     4. Saving results into a custom folder:
 
         ```bash
-        docker run \
+        docker run --rm \
             -v $HOME:/root/ \
-            deepnetwork/image-scanner trivy -e File -f $HOME/myfolder
+            deepnetwork/image-scanner-cli trivy -e File -i File -f /root/myfolder
         ```  
 
         This command runs image-scanner against default Kubernetes cluster and
-        saves export files into folder `$HOME/myfolder`
+        saves export files into folder `/root/myfolder`
 
     5. Setting parallelism degree of percentage:
 
         ```bash
-          docker run \
+          docker run --rm\
               -v $HOME:/root/ \
-              deepnetwork/image-scanner trivy -e File -m 50
+              deepnetwork/image-scanner-cli trivy -e File -i File -m 50
         ```
 
-        To run image-scanner in parallel, you can set a parallelism degree in terms of percentage.
-        If you have 8 logical CPU in your machine and you select `-m 50`, this means that 4 CPU will be used
-        to create multiple scanner instances.
+         The maximum parallelism degree means that the number of the scanner (e.g.Trivy) processes to be run in parallel. The default value is 10.
 
 2. Scan with Clair:
 

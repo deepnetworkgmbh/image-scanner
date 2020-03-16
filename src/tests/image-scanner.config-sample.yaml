@@ -10,7 +10,7 @@ kube:
 scanner:
   !trivy-scanner
   binaryPath: /usr/local/bin/trivy
-  cachePath: /root/.cache/
+  cachePath: /app/.cache/
   registries:
     - name: deepnetwork
       address: https://registry.hub.docker.com
